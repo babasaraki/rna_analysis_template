@@ -1,0 +1,16 @@
+.Rproj.user
+.Rhistory
+.Profile
+.RData
+.Ruserdata
+*.Rproj
+
+renv/library/*
+renv/local/*
+
+fastq/*
+
+prepare_counts/counts.csv
+
+expression_plotting/expr_plotting_results/master-count.sqlite
+expression_plotting/expr_plotting_results/master_diff_expr_data.csv

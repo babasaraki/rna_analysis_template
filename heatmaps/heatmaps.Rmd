@@ -1,0 +1,540 @@
+---
+title: "Heatmaps"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
+
+```{r setup, include=FALSE}
+# setup default chunk settings
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+## Info
+
+General info:
+
+- *Colour ranges are relative within each dataset*
+- *Only the genes/transcripts that were found to be significantly differentially expressed by at least one differential expression method are plotted here*
+
+```{r, fig.height = 90, out.width = "100%", results = FALSE}
+# load libraries
+library(dplyr)
+library(plotly)
+library(gtools)
+library(DT)
+library(heatmaply)
+library(edgeR)
+library(textshape)
+library(rmarkdown)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(file.path(config$metadata))
+
+# read in differential expression results
+diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv",
+                                       header = TRUE)
+
+# load all the count datasets (premade rds objects)
+raw_transcript_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_transcript_rnaseq_counts.rds"))
+raw_gene_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gene_rnaseq_counts.rds"))
+
+lcpm_transcript_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_transcript_rnaseq_counts.rds"))
+lcpm_gene_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_gene_rnaseq_counts.rds"))
+
+# create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
+to_analyse <- config[c("transcript_rnaseq",
+                       "gene_rnaseq")] %>%
+  base::as.data.frame() %>%
+  base::t() %>%
+  base::as.data.frame() %>%
+  tibble::rownames_to_column("dataset") %>%
+  dplyr::rename("analyse" = "V1") %>%
+  tidyr::separate(dataset, c("dataset", "pipeline")) %>%
+  dplyr::filter(analyse == TRUE) %>%
+  dplyr::mutate(dataset_name = base::paste0(dataset, "_", pipeline)) %>%
+  dplyr::pull(dataset_name)
+
+# define which datasets were actually analysed in the differential expression analysis
+# to be used to flag the difference between "no significantly differentially expressed genes/transcripts found"
+# and "gene/transcript not analysed in differential expression analysis
+diff_expr_analysed <- diff_expr_results %>%
+  dplyr::mutate(dataset = paste(dataset, pipeline, sep = "_"))
+
+diff_expr_analysed <- unique(diff_expr_analysed$dataset)
+
+# set up a vector of all the possible datasets to analyse
+raw_datasets <- base::list(transcript_rnaseq = raw_transcript_rnaseq_data,
+                           gene_rnaseq = raw_gene_rnaseq_data)
+
+lcpm_datasets <- base::list(transcript_rnaseq = lcpm_transcript_rnaseq_data,
+                            gene_rnaseq = lcpm_gene_rnaseq_data)
+
+# filter all possible datasets by the datasets the user has specified to analyse
+raw_datasets <- raw_datasets[to_analyse]
+lcpm_datasets <- lcpm_datasets[to_analyse]
+
+# get a list of genes/transcripts that were found to be significantly differentially expressed by at least one differential expression method
+# (based on the user threshold of "significant)
+sig_gene_transcripts <- diff_expr_results %>%
+  dplyr::filter(adj_p_value <= config$pvalue_cutoff) %>%
+  dplyr::pull(unique(gene_transcript))
+
+# get the significantly differentially expressed genes/transcripts (loop over all count datasets)
+log_counts_per_million <- base::lapply(lcpm_datasets, function(x)
+  
+  x %>%
+    base::as.data.frame() %>%
+    tibble::rownames_to_column("gene_transcript") %>%
+    dplyr::filter(gene_transcript %in% sig_gene_transcripts) %>%
+    textshape::column_to_rownames("gene_transcript")
+  
+)
+
+# make sure the samples (columns) in all the datasets are in the same order for specifying the treatments downstream
+# (that depends on the columns being in the correct order)
+log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
+  
+  x %>%
+    dplyr::arrange(desc(rowSums(x)))
+  
+)
+
+# sort columns
+log_counts_per_million <- base::lapply(log_counts_per_million, function(x)
+  
+  x[ , gtools::mixedsort(names(x))] %>%
+    base::as.matrix()
+  
+)
+
+# setup a string that scales the widths of the subplots for each heatmap based on the number of treatment groups
+all_widths <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n()) %>%
+  dplyr::mutate(n_samples = n_samples/base::length(metadata$treatment)) %>%
+  dplyr::pull(n_samples)
+
+# set heatmap figure heights to automatically scale to how many rows are present in the data
+fig_height_transcript_rnaseq <- base::nrow(log_counts_per_million$transcript_rnaseq) / 6
+fig_height_gene_rnaseq <- base::nrow(log_counts_per_million$gene_rnaseq) / 6
+
+fig_height_transcript_rnaseq_free <- base::nrow(log_counts_per_million$transcript_rnaseq) / 4
+fig_height_gene_rnaseq_free <- base::nrow(log_counts_per_million$gene_rnaseq) / 4
+
+# need to set the figure height to NOT ZERO when the figure height ends up being less than 1 so rmarkdown doesn't error out on knitting
+fig_height_transcript_rnaseq[fig_height_transcript_rnaseq <1 ] <- 1
+fig_height_gene_rnaseq[fig_height_gene_rnaseq <1 ] <- 1
+
+fig_height_transcript_rnaseq_free[fig_height_transcript_rnaseq_free <1 ] <- 1
+fig_height_gene_rnaseq_free[fig_height_gene_rnaseq_free <1 ] <- 1
+
+# also need to set the figure height to NOT ZERO when there are no rows of data so rmarkdown doesn't error out on knitting
+fig_height_transcript_rnaseq[is.na(fig_height_transcript_rnaseq[1])] <- 1
+fig_height_gene_rnaseq[is.na(fig_height_gene_rnaseq[1])] <- 1
+
+fig_height_transcript_rnaseq_free[is.na(fig_height_transcript_rnaseq_free[1])] <- 1
+fig_height_gene_rnaseq_free[is.na(fig_height_gene_rnaseq_free[1])] <- 1
+
+# specify treatments by creating a string of conditions that match the order of the columns/samples in the count data
+# get the treatments and samples names from the metadata file
+treatments <- metadata %>%
+  dplyr::select(sample, treatment)
+
+# also sort by the sample column (important so it matches the order of the samples count datasets)
+# this is critical for DESeq2 - it assumes they are in the same order
+treatments$sample <- gtools::mixedsort(treatments$sample)
+
+# extract only the conditions/groups and create a list out of it
+ordered_treatments <- treatments %>%
+  dplyr::pull(treatment)
+```
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - transcript rnaseq: ", config$transcript_rnaseq, "\n",
+                       " - gene rnaseq: ", config$gene_rnaseq, "\n"))
+```
+
+Treatment comparisons: 
+
+```{r, results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("- ", config$contrasts, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
+## Heatmap {.tabset .tabset-fade}
+
+### By treatment group {.tabset .tabset-fade}
+
+```{r, eval = config$transcript_rnaseq, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = config$transcript_rnaseq, fig.height = fig_height_transcript_rnaseq, out.width = "100%"}
+# extract datasets
+lcpm_transcript_rnaseq <- log_counts_per_million$transcript_rnaseq
+
+# setup for heatmap plotting
+# get the number of unique treatments
+N <- base::nlevels(base::factor(metadata$treatment))
+
+# set up an empty list of dataframes that define which samples exist in which treatment group
+data_subset_list <- base::vector("list", N)
+
+# set up an empty list of dataframes for the plotting data
+data_list <- base::vector("list", N)
+
+# set up an empty list for the plots
+plot_list <- base::vector("list", N)
+
+# get the max gene/transcript count in all datasets (over all transcripts) to scale the colour scale to
+maximum_gene_transcript_count <- base::max(c(lcpm_transcript_rnaseq))
+
+# get the min gene/transcript count in all datasets (over all transcripts) to scale the colour scale to
+minimum_gene_transcript_count <- base::min(c(lcpm_transcript_rnaseq))
+
+# set up the colour gradient palette
+gradient_col <- ggplot2::scale_fill_gradient2(
+  low = "#0097db",
+  mid = "white",
+  high = "#ec1515",
+  midpoint = maximum_gene_transcript_count/1.5,
+  limits = c(minimum_gene_transcript_count, maximum_gene_transcript_count))
+
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed genes/transcripts
+# if there ARE significantly differentially expressed genes/transcripts (and there are more than two of them), create a heatmap
+# if there AREN'T significantly differentially expressed genes/transcripts, print a message saying so
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_transcript_rnaseq)) == FALSE & nrow(lcpm_transcript_rnaseq) > 3 & "transcript_rnaseq" %in% diff_expr_analysed == TRUE) {
+  
+  # loop plotting over all treatment levels
+  for (i in 1:N) {
+    
+    # make a variable that defines the current treatment/level we're dealing with in the for loop
+    current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+    
+    # get the samples in each treatment
+    data_subset_list[[i]] <- metadata %>%
+      filter(treatment == current_treatment) %>%
+      select(sample)
+    
+    # set up the data
+    # populate the list of dataframes with data
+    data_list[[i]] <- lcpm_transcript_rnaseq %>%
+      base::as.data.frame() %>%
+      # select the samples from each treatment group based on "data_subset_list"
+      dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
+      # prepare data for plotting with matrix
+      base::as.matrix()
+    
+    # create custom text that will be appended to the tooltip
+    custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
+                                               "\nPipeline: rnaseq"
+    ),
+    # make it the same dimensions as the current dataset (required for this to work)
+    nrow = base::nrow(data_list[[i]]),
+    ncol = base::ncol(data_list[[i]]))
+    
+    # plot a heatmap for each treatment
+    p <- data_list[[i]] %>%
+      heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                           xlab = paste(current_treatment),
+                           dendrogram = c("none"),
+                           key.title = "Log counts \n per million",
+                           label_names = c("Gene/transcript", "Sample", "Log counts per million"),
+                           label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                           custom_hovertext = custom_tooltip,
+                           showticklabels = c(FALSE, TRUE),
+                           titleX = FALSE,
+                           srtCol = 45,
+                           hide_colorbar = TRUE)
+    
+    plot_list[[i]] = p
+    
+  }
+  
+  # plot all together
+  plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
+  
+} else if (all(is.na(lcpm_transcript_rnaseq)) == FALSE & nrow(lcpm_transcript_rnaseq) <= 3 & "transcript_rnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed transcripts to cluster in a PCA"))
+} else if (all(is.na(lcpm_transcript_rnaseq)) == TRUE & "transcript_rnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed transcripts"))
+} else if (all(is.na(lcpm_transcript_rnaseq)) == TRUE & "transcript_rnaseq" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
+}
+```
+
+```{r, eval = config$gene_rnaseq, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = config$gene_rnaseq, fig.height = fig_height_gene_rnaseq, out.width = "100%"}
+# extract datasets
+lcpm_gene_rnaseq <- log_counts_per_million$gene_rnaseq
+
+# setup for heatmap plotting
+# get the number of unique treatments
+N <- base::nlevels(base::factor(metadata$treatment))
+
+# set up an empty list of dataframes that define which samples exist in which treatment group
+data_subset_list <- base::vector("list", N)
+
+# set up an empty list of dataframes for the plotting data
+data_list <- base::vector("list", N)
+
+# set up an empty list for the plots
+plot_list <- base::vector("list", N)
+
+# get the max gene/transcript count in all datasets (over all genes) to scale the colour scale to
+maximum_gene_transcript_count <- base::max(c(lcpm_gene_rnaseq))
+
+# get the min gene/transcript count in all datasets (over all genes) to scale the colour scale to
+minimum_gene_transcript_count <- base::min(c(lcpm_gene_rnaseq))
+
+# set up the colour gradient palette
+gradient_col <- ggplot2::scale_fill_gradient2(
+  low = "#0097db",
+  mid = "white",
+  high = "#ec1515",
+  midpoint = maximum_gene_transcript_count/1.5,
+  limits = c(minimum_gene_transcript_count, maximum_gene_transcript_count))
+
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed genes/transcripts
+# if there ARE significantly differentially expressed genes/transcripts (and there are more than two of them), create a heatmap
+# if there AREN'T significantly differentially expressed genes/transcripts, print a message saying so
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_gene_rnaseq)) == FALSE & nrow(lcpm_gene_rnaseq) > 3 & "gene_rnaseq" %in% diff_expr_analysed == TRUE) {
+  
+  # loop plotting over all treatment levels
+  for (i in 1:N) {
+    
+    # make a variable that defines the current treatment/level we're dealing with in the for loop
+    current_treatment <- mixedsort(levels(factor(metadata$treatment)))[i]
+    
+    # get the samples in each treatment
+    data_subset_list[[i]] <- metadata %>%
+      filter(treatment == current_treatment) %>%
+      select(sample)
+    
+    # set up the data
+    # populate the list of dataframes with data
+    data_list[[i]] <- lcpm_gene_rnaseq %>%
+      base::as.data.frame() %>%
+      # select the samples from each treatment group based on "data_subset_list"
+      dplyr::select(data_subset_list[[i]] %>% dplyr::pull(sample)) %>%
+      # prepare data for plotting with matrix
+      base::as.matrix()
+    
+    # create custom text that will be appended to the tooltip
+    custom_tooltip <- base::matrix(base::paste("Treatment:", current_treatment,
+                                               "\nPipeline: excerpt"
+    ),
+    # make it the same dimensions as the current dataset (required for this to work)
+    nrow = base::nrow(data_list[[i]]),
+    ncol = base::ncol(data_list[[i]]))
+    
+    # plot a heatmap for each treatment
+    p <- data_list[[i]] %>%
+      heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                           xlab = paste(current_treatment),
+                           dendrogram = c("none"),
+                           key.title = "Log counts \n per million",
+                           label_names = c("Gene/transcript", "Sample", "Log counts per million"),
+                           label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                           custom_hovertext = custom_tooltip,
+                           showticklabels = c(FALSE, TRUE),
+                           titleX = FALSE,
+                           srtCol = 45,
+                           hide_colorbar = TRUE)
+    
+    plot_list[[i]] = p
+    
+  }
+  
+  # plot all together
+  plotly::subplot(plot_list, nrows = 1, margin = .002, shareY = TRUE, shareX = TRUE, titleX = TRUE, widths = c(all_widths))
+  
+} else if (all(is.na(lcpm_gene_rnaseq)) == FALSE & nrow(lcpm_gene_rnaseq) <= 3 & "gene_rnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed genes to cluster in a PCA"))
+} else if (all(is.na(lcpm_gene_rnaseq)) == TRUE & "gene_rnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed genes"))
+} else if (all(is.na(lcpm_gene_rnaseq)) == TRUE & "gene_rnaseq" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
+}
+```
+
+### Free to cluster {.tabset .tabset-fade}
+
+```{r, eval = config$transcript_rnaseq, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = config$transcript_rnaseq, fig.height = fig_height_transcript_rnaseq_free, out.width = "100%"}
+# extract datasets
+lcpm_transcript_rnaseq <- log_counts_per_million$transcript_rnaseq
+
+# get the max gene/transcript count in all datasets (over all transcripts) to scale the colour scale to
+maximum_gene_transcript_count <- base::max(c(lcpm_transcript_rnaseq))
+
+# get the min gene/transcript count in all datasets (over all transcripts) to scale the colour scale to
+minimum_gene_transcript_count <- base::min(c(lcpm_transcript_rnaseq))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_transcript_rnaseq)),
+                                           "\nPipeline: rnaseq"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_transcript_rnaseq)) %>%
+  t()
+
+# set up the colour gradient palette
+gradient_col <- ggplot2::scale_fill_gradient2(
+  low = "#0097db",
+  mid = "white",
+  high = "#ec1515",
+  midpoint = maximum_gene_transcript_count/1.5,
+  limits = c(minimum_gene_transcript_count, maximum_gene_transcript_count))
+
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed genes/transcripts
+# if there ARE significantly differentially expressed genes/transcripts (and there are more than two of them), create a heatmap
+# if there AREN'T significantly differentially expressed genes/transcripts, print a message saying so
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_transcript_rnaseq)) == FALSE & nrow(lcpm_transcript_rnaseq) > 3 & "transcript_rnaseq" %in% diff_expr_analysed == TRUE) {
+  
+  # plot a heatmap for each treatment
+  lcpm_transcript_rnaseq %>%
+    heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                         xlab = "Sample",
+                         dendrogram = c("both"),
+                         key.title = "Log counts \n per million",
+                         label_names = c("Gene/transcript", "Sample", "Log counts per million"),
+                         label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
+                         srtCol = 45,
+                         seriate = "mean",
+                         col_side_colors = ordered_treatments,
+                         hide_colorbar = TRUE)
+  
+} else if (all(is.na(lcpm_transcript_rnaseq)) == FALSE & nrow(lcpm_transcript_rnaseq) <= 3 & "transcript_rnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed trancripts to cluster in a PCA"))
+} else if (all(is.na(lcpm_transcript_rnaseq)) == TRUE & "transcript_rnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed trancripts"))
+} else if (all(is.na(lcpm_transcript_rnaseq)) == TRUE & "transcript_rnaseq" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
+}
+```
+
+```{r, eval = config$gene_rnaseq, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = config$gene_rnaseq, fig.height = fig_height_gene_rnaseq_free, out.width = "100%"}
+# extract datasets
+lcpm_gene_rnaseq <- log_counts_per_million$gene_rnaseq
+
+# get the max gene/transcript count in all datasets (over all genes) to scale the colour scale to
+maximum_gene_transcript_count <- base::max(c(lcpm_gene_rnaseq))
+
+# get the min gene/transcript count in all datasets (over all genes) to scale the colour scale to
+minimum_gene_transcript_count <- base::min(c(lcpm_gene_rnaseq))
+
+# create custom text that will be appended to the tooltip
+custom_tooltip <- base::matrix(base::paste("Treatment: ", rep(ordered_treatments, times = nrow(lcpm_gene_rnaseq)),
+                                           "\nPipeline: excerpt"),
+                               nrow = length(unique(metadata$sample)),
+                               ncol = nrow(lcpm_gene_rnaseq)) %>%
+  t()
+
+# set up the colour gradient palette
+gradient_col <- ggplot2::scale_fill_gradient2(
+  low = "#0097db",
+  mid = "white",
+  high = "#ec1515",
+  midpoint = maximum_gene_transcript_count/1.5,
+  limits = c(minimum_gene_transcript_count, maximum_gene_transcript_count))
+
+# check if the matrix for plotting is empty after filtering for only significantly differentially expressed genes/transcripts
+# if there ARE significantly differentially expressed genes/transcripts (and there are more than two of them), create a heatmap
+# if there AREN'T significantly differentially expressed genes/transcripts, print a message saying so
+# if the dataset wasn't analysed, print a message saying so
+if (all(is.na(lcpm_gene_rnaseq)) == FALSE & nrow(lcpm_gene_rnaseq) > 3 & "gene_rnaseq" %in% diff_expr_analysed == TRUE) {
+  
+  # plot a heatmap for each treatment
+  lcpm_gene_rnaseq %>%
+    heatmaply::heatmaply(scale_fill_gradient_fun = gradient_col,
+                         xlab = "Sample",
+                         dendrogram = c("both"),
+                         key.title = "Log counts \n per million",
+                         label_names = c("Gene/transcript", "Sample", "Log counts per million"),
+                         label_format_fun = function(...) format(..., big.mark = ",", scientific = FALSE, digits = 0),
+                         custom_hovertext = custom_tooltip,
+                         showticklabels = c(FALSE, TRUE),
+                         titleX = FALSE,
+                         srtCol = 45,
+                         seriate = "mean",
+                         col_side_colors = ordered_treatments,
+                         hide_colorbar = TRUE)
+  
+} else if (all(is.na(lcpm_gene_rnaseq)) == FALSE & nrow(lcpm_gene_rnaseq) <= 3 & "gene_rnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("Too few significantly differentially expressed genes to cluster in a PCA"))
+} else if (all(is.na(lcpm_gene_rnaseq)) == TRUE & "gene_rnaseq" %in% diff_expr_analysed == TRUE) {
+  cat(paste("No significantly differentially expressed genes"))
+} else if (all(is.na(lcpm_gene_rnaseq)) == TRUE & "gene_rnaseq" %in% diff_expr_analysed == FALSE) {
+  cat(paste("Dataset not analysed"))
+}
+```
+
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
+```

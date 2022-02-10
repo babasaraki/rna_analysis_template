@@ -1,0 +1,52 @@
+#################################################
+#####                GENERAL               ######
+#################################################
+
+# set the path to the directory containing the input fastq files
+fastq_dir: "/my_project/rna_analysis_template/test/fastq/"
+
+# set the path to your smncrna_analysis_template directory
+template_dir: "/my_project/rna_analysis_template/"
+
+# set the path to your metadata file
+metadata_path: "/my_project/rna_analysis_template/config/metadata.csv"
+
+# set the path to your rnaseq pipeline run results directory
+rnaseq_results_dir: "/my_project/rna_analysis_template/test/rnaseq_pipeline_run/results/"
+
+# choose the count datasets you wish to analyse
+transcript_rnaseq: true
+gene_rnaseq: true
+
+#################################################
+#####   DIFFERENTIAL EXPRESSION ANALYSIS   ######
+#################################################
+
+# specify the contrasts/treatment groups to compare
+# in the following format:
+# "first contrast" - "second contrast"
+# one or multiple contrasts can be included here (maximum of 6)
+contrasts: 
+- "treatment1 - treatment2"
+- "treatment1 - treatment3"
+
+# filtering settings for limma/voom analysis
+
+# minimum count required for at least some samples
+# see info about this flag here: https://rdrr.io/bioc/edgeR/man/filterByExpr.html
+# default is 10
+min_count: 10
+
+# minimum total count required
+# see info about this flag here: https://rdrr.io/bioc/edgeR/man/filterByExpr.html
+# default is 15
+min_total_count: 15
+
+# the minimum log2-fold-change that is considered scientifically meaningful
+# limits the false discovery rate
+# see more info about this function/flag here: https://rdrr.io/bioc/limma/man/ebayes.html
+# typical values for lfc are log2(1.1), log2(1.2) or log2(1.5)
+min_lfc: "log2(1.1)"
+
+# p-value cutoff to consider an RNA significantly differentially expressed
+pvalue_cutoff: 0.1

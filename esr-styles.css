@@ -1,0 +1,109 @@
+/* using ubuntu font, but can easily change to arial or other */
+body {
+  font-family: Ubuntu, helvetica, sans-serif;
+}
+
+/* heading 1 set to be ESR blue */
+h1 {
+  color: rgb(0, 151, 219);
+  font-size: 130%;
+}
+
+.title {
+  margin-right: 200px;
+}
+
+/* define h2 to have a bg that is ESR blue width of page */
+h2 {
+  color: #fff;
+  font-size: 128%;
+  font-weight: bold;
+  padding: 10px;
+  line-height: 12px;
+  background-color: #0097db;
+}
+/* set span of bar for h2 across page */
+h2 span {
+  background-color: #000;
+  color: #fff;
+  padding: 5px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  line-height: 2;
+}
+
+h3 {
+  font-size: 109%;
+  font-weight: bold;
+}
+
+h4 {
+  font-size: 100%;
+  font-weight: bold;
+  font-style: italic;
+}
+
+.watermark {
+  opacity: 0.2;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  font-size: 500%;
+  color: #00407d;
+}
+
+/* information/alert boxes with different ESR colours, using white font */
+.alert-custom-blue{
+  background-color:#0097db;
+  color:#fff;
+}
+
+.alert-custom-green{
+  background-color:#85C659;
+  color:#fff;
+}
+
+.alert-custom-red{
+  background-color:#ec1515;
+  color:#fff;
+}
+
+.alert-custom-yellow{
+  background-color:#febf2a;
+  color:#fff;
+}
+
+.alert-custom-purple{
+  background-color:#784f96;
+  color:#fff;
+}
+
+.alert-custom-lightgreen{
+  background-color:#1abcc1;
+  color:#fff;
+}
+
+/* remove underline on hover */
+a:hover {
+  text-decoration: none;
+}
+
+/* Change TOC hover to ESR blue */
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+    background-color: #0097db;
+}
+
+/* table caption formatting */
+caption {
+  color:rgb(77, 77, 77);
+  font-size: 1.0em;
+  font-weight: bold;
+  font-style: italic;
+}
+/* figure caption formatting */
+p.caption {
+  color:rgb(77, 77, 77);
+  font-size: 1.0em;
+  font-weight: bold;
+  font-style: italic;
+}

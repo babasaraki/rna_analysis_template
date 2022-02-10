@@ -1,0 +1,389 @@
+---
+title: "MDS"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
+
+```{r setup, include=FALSE}
+# setup default chunk settings
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center", collapse = TRUE)
+```
+
+```{r}
+# load libraries
+library(plyr)
+library(dplyr)
+library(plotly)
+library(gtools)
+library(BiocManager)
+library(limma)
+library(textshape)
+library(DT)
+library(yaml)
+library(htmltools)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
+to_analyse <- config[c("transcript_rnaseq",
+                       "gene_rnaseq")] %>%
+  base::as.data.frame() %>%
+  base::t() %>%
+  base::as.data.frame() %>%
+  tibble::rownames_to_column("dataset") %>%
+  dplyr::rename("analyse" = "V1") %>%
+  tidyr::separate(dataset, c("dataset", "pipeline")) %>%
+  dplyr::filter(analyse == TRUE) %>%
+  dplyr::mutate(dataset_name = base::paste0(dataset, "_", pipeline))
+
+# also create a list for downstream filtering
+to_analyse_list <- to_analyse %>%
+  dplyr::pull(dataset) %>%
+  base::as.list()
+
+# read in pre-prepared count data
+counts <- utils::read.csv("../prepare_counts/counts.csv")
+
+# read in metadata
+metadata <- utils::read.csv(config$metadata_path)
+
+# join with metadata
+counts <- dplyr::left_join(counts, metadata, by = "sample")
+
+# subset all count data to the count data specified to be analysed by the user in the config file
+# this will remove rows of data matching the said conditions
+
+if(config$transcript_rnaseq == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((dataset == "transcript") & (pipeline == "rnaseq")))
+  
+}
+
+if(config$gene_rnaseq == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((dataset == "gene") & (pipeline == "rnaseq")))
+  
+}
+```
+
+```{bash}
+# create a directory to write data to file (if it doesn't yet exist)
+mkdir -p ./mds_results/
+```
+
+## Info
+
+General info:
+
+- *Values have been rounded*
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - transcript rnaseq: ", config$transcript_rnaseq, "\n",
+                       " - gene rnaseq: ", config$gene_rnaseq, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
+## MDS {.tabset .tabset-fade}
+
+```{r, results = "asis"}
+# pretty format the text for the header
+to_analyse_pretty <- to_analyse %>%
+  base::as.data.frame() %>%
+  dplyr::mutate(pipeline = base::replace(pipeline, pipeline == "rnaseq", "(rnaseq)"))
+
+# create a character string (from the list) of the datasets and pipelines being analysed to put into the header
+dataset_pretty <- to_analyse_pretty %>%
+  dplyr::pull(dataset) %>%
+  base::as.list()
+
+pipeline_pretty <- to_analyse_pretty %>%
+  dplyr::pull(pipeline) %>%
+  base::as.list()
+
+to_analyse_pretty <- base::paste0(dataset_pretty, " ", pipeline_pretty, collapse = " ")
+
+# dynamically build up a header based on the datasets being analysed
+base::cat(base::paste0("### All datasets analysed: ", to_analyse_pretty, " ", "{.tabset .tabset-fade}"))
+```
+
+```{r, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "rnaseq") %>%
+  # analyse/plot only the datasets the user has specified to analyse
+  dplyr::filter(dataset %in% to_analyse_list) %>%
+  dplyr::select(sample, gene_transcript, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("gene_transcript") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <- base::cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+utils::write.csv(data, "./mds_results/mds_all_datasets.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- dplyr::left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plotly::plot_ly(mode = "markers",
+                  x = ~dim1,
+                  y = ~dim2,
+                  type = "scatter",
+                  color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
+                  hoverinfo = "text",
+                  text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
+```
+
+```{r, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r, eval = config$gene_rnaseq, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("### genes (rnaseq)")
+```
+
+```{r, eval = config$gene_rnaseq, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "rnaseq") %>%
+  dplyr::filter(dataset == "gene") %>%
+  dplyr::select(sample, gene_transcript, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("gene_transcript") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <- base::cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+utils::write.csv(data, "./mds_results/mds_rnaseq_transcript.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- dplyr::left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plotly::plot_ly(mode = "markers",
+                  x = ~dim1,
+                  y = ~dim2,
+                  type = "scatter",
+                  color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
+                  hoverinfo = "text",
+                  text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
+```
+
+```{r, eval = config$gene_rnaseq, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r, eval = config$transcript_rnaseq, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("### transcripts (rnaseq)")
+```
+
+```{r, eval = config$transcript_rnaseq, out.width = "100%"}
+# calculate MDS
+mds <- counts %>%
+  dplyr::filter(pipeline == "rnaseq") %>%
+  dplyr::filter(dataset == "transcript") %>%
+  dplyr::select(sample, gene_transcript, counts_per_million) %>%
+  tidyr::pivot_wider(names_from = sample, values_from = counts_per_million) %>%
+  textshape::column_to_rownames("gene_transcript") %>%
+  base::as.matrix() %>%
+  limma::plotMDS(plot = FALSE)
+
+# extract data and make into a dataframe for plotting
+data <- base::cbind(mds$x, mds$y) %>%
+  base::as.data.frame() %>%
+  plyr::rename(c("V1" = "dim1")) %>%
+  plyr::rename(c("V2" = "dim2")) %>%
+  tibble::rownames_to_column("sample")
+
+# save data to file
+utils::write.csv(data, "./mds_results/mds_rnaseq_transcript.csv", row.names = FALSE)
+
+# bind data with metadata to get the treatment column
+data <- dplyr::left_join(data, metadata, by = "sample")
+
+# plot!
+data %>%
+  plotly::plot_ly(mode = "markers",
+                  x = ~dim1,
+                  y = ~dim2,
+                  type = "scatter",
+                  color = ~treatment,
+                  colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
+                  hoverinfo = "text",
+                  text = ~paste("</br> Sample:", sample,
+                                "</br> Treatment:", treatment,
+                                "</br> Dim1:", base::format(dim1, big.mark = ",", scientific = FALSE, digits = 2),
+                                "</br> Dim2:", base::format(dim2, big.mark = ",", scientific = FALSE, digits = 2))) %>%
+  plotly::layout(xaxis = base::list(title = "Dim1"),
+                 yaxis = base::list(title = "Dim2"))
+```
+
+```{r, eval = config$mirna_excerpt, out.width = "100%"}
+# plot data in datatable
+DT::datatable(data %>%
+                dplyr::select(sample,
+                              treatment,
+                              dim1,
+                              dim2) %>%
+                dplyr::mutate(across(c(sample,
+                                       treatment), base::as.factor)) %>%
+                dplyr::mutate(across(c(dim1,
+                                       dim2), base::as.integer)),
+              
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Sample",
+                           "Treatment",
+                           "dim1",
+                           "dim2"),
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "150px", targets = 0:1)),
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
+```

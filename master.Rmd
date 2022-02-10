@@ -1,0 +1,95 @@
+---
+title: "RNA analysis"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r format(Sys.time(), '%d/%m/%Y')`"
+output:
+  html_document:
+    code_download: true
+    code_folding: hide
+  editor_options: 
+    chunk_output_type: console
+---
+
+## Setup
+
+Restore the [renv](https://rstudio.github.io/renv/) to install all of the packages as declared in the lockfile, ie. get all the software needed for this template
+
+```{r}
+renv::restore()
+```
+
+## Prepare count data
+
+*This will output a csv file with raw, counts per million and log counts per million for all samples and RNA species (./prepare_counts/counts.csv)*
+
+```{r}
+base::source("./prepare_counts/prepare_counts.R")
+```
+
+## MDS plots
+
+*This will output an interactive html document exploring the multidimentional scaling (MDS) of the RNA's (./mds/mds.html) as well as csv files with raw mds data (./mds/mds_results/)*
+
+```{r}
+rmarkdown::render("./mds/mds.Rmd")
+```
+
+## PCA plots
+
+Data prep for app
+
+*This will output several csv files that are used in the RShiny PCA app (for example: ./pca/pca_results/individuals_1_2.csv, ./pca/pca_results/variables_1_2.csv and ./pca/pca_results/scree.csv)*
+
+```{r}
+base::source("./pca/data_prep_for_app.R")
+```
+
+Run the RShiny app locally or deploy to a shinyapps IO account (which will allow you to link the app in a github page), see the server and ui scripts that comprise the app at `./pca/server.R` and `./pca/ui.R` respectively
+
+## Differential expression analysis
+
+*This will output an interactive html document exploring the differential expression analysis of the RNA's (./diff_expression/diff_expression.html) as well as csv files with raw differential expression results data (./diff_expression/diff_expr_results/diff_expr_results.tsv)*
+
+```{r}
+rmarkdown::render("./diff_expression/diff_expression.Rmd")
+```
+
+## Heatmaps
+
+*This will output an interactive html document with heatmaps (./heatmaps/heatmaps.html)*
+
+```{r}
+rmarkdown::render("./heatmaps/heatmaps.Rmd")
+```
+
+## Presence/absence
+
+*This will output an interactive html document exploring the presence/absence of the RNA's between treatment groups (./presence_absence/presence_absence.html)*
+
+```{r}
+rmarkdown::render("./presence_absence/presence_absence.Rmd")
+```
+
+## Expression plots
+
+Data prep for app
+
+*This will output an sqlite database and several csv files that are used in the RShiny PCA app (for example: ./expression_plotting/expr_plotting_results/master-count.sqlite and ./expression_plotting/expr_plotting_results/master_diff_expr_data.csv). It will also output a version of the config file from ./config/config.yaml that is ready to be used by the app (./expression_plotting/expr_plotting_results/config.yaml)*
+
+```{r}
+base::source("./expression_plotting/data_prep_for_app.R")
+```
+
+Run the RShiny app locally or deploy to a shinyapps IO account (which will allow you to link the app in a github page), see the server and ui scripts that comprise the app at `./expression_plotting/server.R` and `./expression_plotting/ui.R` respectively
+
+## Save session info
+
+*This will record the R version and packages you're using for reproducibility purposes (./R_version_info.txt and ./R_session_info.txt)*
+
+```{r, results = "hide"}
+# save session info
+base::writeLines(utils::capture.output(base::R.Version()), "R_version_info.txt")
+base::writeLines(utils::capture.output(utils::sessionInfo()), "R_session_info.txt")
+```
