@@ -2,7 +2,7 @@
 
 ---
 
-Analysis template for analysing, visualising and communicating the findings of [Illumina RNA sequencing](https://www.illumina.com/techniques/sequencing/rna-sequencing.html) data. This is set up to analyse human data, but can be adapted to other species with some tweaks to the code, namely the pipeline inputs. This template uses the count data and other QC from both the [rnaseq](https://github.com/nf-core/rnaseq/) and [parabricks rna](https://docs.nvidia.com/clara/parabricks/v3.6.1/text/rna_pipeline.html) pipelines, so I'm assuming you've run these pipelines on your data before using this template. See a live example github page [here](https://leahkemp.github.io/rna_analysis_template/).
+Analysis template for analysing, visualising and communicating the findings of [Illumina RNA sequencing](https://www.illumina.com/techniques/sequencing/rna-sequencing.html) data. This is set up to analyse human data, but can be adapted to other species with some tweaks to the code, namely the pipeline inputs. This template uses the count data and other QC from the [rnaseq](https://github.com/nf-core/rnaseq/) pipeline, so I'm assuming you've run this pipeline on your data before using this template. See a live example github page [here](https://leahkemp.github.io/rna_analysis_template/).
 
 ---
 
@@ -35,13 +35,11 @@ This template uses open source tools and includes several scripts for researcher
 ## What this template can't do
 
 - Tell you what analysis tools and parameters are appropriate for your data or research question, the assumption is that the tools this template uses are tools you've intentionally chosen to use and that you will actively adapt this template for your use-case
-- Account for different operating systems and compute infrastructures - this means some UNIX experience may be required to run the pipelines/scripts on your operating system or job scheduler. I won't tell you how to do this here, but the pipelines and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) environments to make the R code more portable
+- Account for different operating systems and compute infrastructures - this means some UNIX experience may be required to run the pipeline/scripts on your operating system or job scheduler. I won't tell you how to do this here, but the pipeline and tools used here are generally portable (ie. able to be run on different operating systems) and I've used [renv](https://rstudio.github.io/renv/articles/renv.html) environments to make the R code more portable
 
 ## What's this template gonna do?
 
-Beyond the QC the pipelines undertake, additional QC is undertaken to summarise the read counts and mapping rates of the data.
-
-These counts datasets output by the pipelines are analysed in [R](https://www.r-project.org/) to undertake a differential expression analysis of all these RNA species to find differently expressed RNA's. Two methods were employed to undertake a differential expression analysis, namely [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
+These counts datasets output by the pipeline are analysed in [R](https://www.r-project.org/) to undertake a differential expression analysis of all these RNA species to find differently expressed RNA's. Two methods were employed to undertake a differential expression analysis, namely [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
 
 Beyond a traditional differential expression analysis, the data is prepared and presented in an interactive [RShiny](https://shiny.rstudio.com/) app that allows the user to explore RNA expression (both raw counts and counts per million).
 
@@ -61,7 +59,7 @@ This template has been validated to work on:
 - R version 4.0.5
 - CentOS Linux 7
 
-Test data available in the [test directory](./test/), including [fastq data](./test/fastq/), associated [metadata](./test/metadata.csv), [smrnaseq pipeline outputs](./test/smrnaseq_pipeline_run/) and [excerpt pipeline outputs](./test/excerpt_pipeline_run/) run on this test fastq data
+Test data available in the [test directory](./test/), including [fastq data](./test/fastq/), associated [metadata](./test/metadata.csv) and [rnaseq pipeline outputs](./test/rnaseq_pipeline_run/) run on this test fastq data
 
 ## How to use this template
 
