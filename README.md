@@ -59,7 +59,12 @@ This template has been validated to work on:
 - R version 4.0.5
 - CentOS Linux 7
 
-Test data available in the [test directory](./test/), including [fastq data](./test/fastq/), associated [metadata](./test/metadata.csv) and [rnaseq pipeline outputs](./test/rnaseq_pipeline_run/) run on this test fastq data
+Test data available in the [test directory](./test/), including [fastq data](./test/fastq/), associated [metadata](./test/metadata.csv) and [rnaseq pipeline outputs](./test/rnaseq_pipeline_run/) run on this test fastq data. Raw fastq data from [ENCODE](https://www.encodeproject.org/)), download links:
+
+- [ENCFF133KON download link](https://www.encodeproject.org/files/ENCFF133KON/@@download/ENCFF133KON.fastq.gz) and [experiment info](https://www.encodeproject.org/experiments/ENCSR792OIJ/)
+- [ENCFF837UEC download link](https://www.encodeproject.org/files/ENCFF837UEC/@@download/ENCFF837UEC.fastq.gz) and [experiment info](https://www.encodeproject.org/experiments/ENCSR735JKB/)
+- [ENCFF241KIB download link](https://www.encodeproject.org/files/ENCFF241KIB/@@download/ENCFF241KIB.fastq.gz) and [experiment info](https://www.encodeproject.org/experiments/ENCSR245ATJ/)
+- [ENCFF248MER download link](https://www.encodeproject.org/files/ENCFF248MER/@@download/ENCFF248MER.fastq.gz) and [experment info](https://www.encodeproject.org/experiments/ENCSR820PHH/)
 
 ## How to use this template
 

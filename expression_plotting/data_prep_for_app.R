@@ -41,6 +41,9 @@ metadata <- utils::read.csv(config$metadata_path)
 
 # read in differential expression data
 diff_expr_data <- utils::read.table("./diff_expression/diff_expr_results/diff_expr_results.tsv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+sig_diff_expr_data_1 <- utils::read.table("./diff_expression/diff_expr_results/sig_diff_expr_results_1.csv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+sig_diff_expr_data_5 <- utils::read.table("./diff_expression/diff_expr_results/sig_diff_expr_results_5.csv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+sig_diff_expr_data_10 <- utils::read.table("./diff_expression/diff_expr_results/sig_diff_expr_results_10.csv", header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
 
 ##################################################################
 ##                   Prep of count data                         ##
@@ -48,26 +51,6 @@ diff_expr_data <- utils::read.table("./diff_expression/diff_expr_results/diff_ex
 
 # append metadata to the count data
 counts <- dplyr::left_join(counts, metadata, by = "sample")
-
-##################################################################
-##           Prep of differential expression data               ##
-##################################################################
-
-# extract a list of the significant genes/transcripts (at three significance levels)
-sig_diff_expr_data_1 <- diff_expr_data %>%
-  dplyr::filter(significance == "significant_1%") %>%
-  dplyr::select(gene_transcript) %>%
-  dplyr::distinct(gene_transcript)
-
-sig_diff_expr_data_5 <- diff_expr_data %>%
-  dplyr::filter(significance == "significant_5%") %>%
-  dplyr::select(gene_transcript) %>%
-  dplyr::distinct(gene_transcript)
-
-sig_diff_expr_data_10 <- diff_expr_data %>%
-  dplyr::filter(significance == "significant_10%") %>%
-  dplyr::select(gene_transcript) %>%
-  dplyr::distinct(gene_transcript)
 
 #################################################################
 ##                        Write to file                        ##

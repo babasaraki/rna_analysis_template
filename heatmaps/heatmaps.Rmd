@@ -36,7 +36,7 @@ General info:
 - *Colour ranges are relative within each dataset*
 - *Only the genes/transcripts that were found to be significantly differentially expressed by at least one differential expression method are plotted here*
 
-```{r, fig.height = 90, out.width = "100%", results = FALSE}
+```{r, results = FALSE}
 # load libraries
 library(dplyr)
 library(plotly)
@@ -100,10 +100,75 @@ raw_datasets <- raw_datasets[to_analyse]
 lcpm_datasets <- lcpm_datasets[to_analyse]
 
 # get a list of genes/transcripts that were found to be significantly differentially expressed by at least one differential expression method
-# (based on the user threshold of "significant)
 sig_gene_transcripts <- diff_expr_results %>%
-  dplyr::filter(adj_p_value <= config$pvalue_cutoff) %>%
-  dplyr::pull(unique(gene_transcript))
+  dplyr::filter(significance %in% c("significant_1%", "significant_5%", "significant_10%"))
+
+# extract significant gene/transcript data into seperate dataframes
+sig_genes <- sig_gene_transcripts %>%
+  dplyr::filter(dataset == "gene") 
+
+sig_transcripts <- sig_gene_transcripts %>%
+  dplyr::filter(dataset == "transcript")
+
+# create a true/false strings that defines if there are more than 300 significant genes/transcripts for plotting
+too_many_genes <- nrow(sig_genes) > 300
+too_many_transcripts <- nrow(sig_transcripts) > 300
+
+# if there ARE too many significant genes/transcripts (more than 300)
+# subset to 300 with the greatest log fold change
+# if the AREN'T too many significant genes/transcripts, just pull the gene/transcript list
+if(too_many_genes == TRUE) {
+  
+  sig_genes <- sig_genes %>%
+    # make a column with all log fold change values as positive values
+    dplyr::mutate(log_fc_all_positive = base::abs(log_fc)) %>%
+    # arrange by the largest log fold change (irrespective if it's positive or negative)
+    dplyr::arrange(plyr::desc(log_fc_all_positive)) %>%
+    # get the gene names
+    dplyr::pull(gene_transcript) %>%
+    # get the unique genes (since there can be multiple rows for a given gene)
+    base::unique()
+  
+  # get top 300 genes
+  sig_genes <- sig_genes[1:300]
+  
+} else if(too_many_genes == FALSE) {
+  
+  sig_genes <- sig_genes %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique genes (since there can be multiple rows for a given gene)
+    base::unique()
+  
+}
+
+if(too_many_transcripts == TRUE) {
+  
+  sig_transcripts <- sig_transcripts %>%
+    # make a column with all log fold change values as positive values
+    dplyr::mutate(log_fc_all_positive = base::abs(log_fc)) %>%
+    # arrange by the largest log fold change (irrespective if it's positive or negative)
+    dplyr::arrange(plyr::desc(log_fc_all_positive)) %>%
+    # get the transcript names
+    dplyr::pull(gene_transcript) %>%
+    # get the unique transcripts (since there can be multiple rows for a given transcript)
+    base::unique()
+  
+  # get top 300 genes
+  sig_transcripts <- sig_transcripts[1:300]
+  
+} else if(too_many_transcripts == FALSE) {
+  
+  sig_transcripts <- sig_transcripts %>%
+    # get the RNA names
+    dplyr::pull(rna) %>%
+    # get the unique transcripts (since there can be multiple rows for a given transcript)
+    base::unique()
+  
+}
+
+# merge genes/transcripts list back together
+sig_gene_transcripts <- c(sig_genes, sig_transcripts)
 
 # get the significantly differentially expressed genes/transcripts (loop over all count datasets)
 log_counts_per_million <- base::lapply(lcpm_datasets, function(x)
@@ -215,6 +280,10 @@ base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_b
 base::cat("#### transcript's (rnaseq)")
 ```
 
+```{r, eval = too_many_transcripts, results = "asis"}
+base::cat(base::paste0("Too many significant transcripts to plot. Plotting only 300 transcripts with the largest log fold change among all treatment comparisons."))
+```
+
 ```{r, eval = config$transcript_rnaseq, fig.height = fig_height_transcript_rnaseq, out.width = "100%"}
 # extract datasets
 lcpm_transcript_rnaseq <- log_counts_per_million$transcript_rnaseq
@@ -313,6 +382,10 @@ if (all(is.na(lcpm_transcript_rnaseq)) == FALSE & nrow(lcpm_transcript_rnaseq) >
 ```{r, eval = config$gene_rnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = too_many_genes, results = "asis"}
+base::cat(base::paste0("Too many significant genes to plot. Plotting only 300 genes with the largest log fold change among all treatment comparisons."))
 ```
 
 ```{r, eval = config$gene_rnaseq, fig.height = fig_height_gene_rnaseq, out.width = "100%"}
@@ -417,6 +490,10 @@ if (all(is.na(lcpm_gene_rnaseq)) == FALSE & nrow(lcpm_gene_rnaseq) > 3 & "gene_r
 base::cat("#### transcript's (rnaseq)")
 ```
 
+```{r, eval = too_many_transcripts, results = "asis"}
+base::cat(base::paste0("Too many significant transcripts to plot. Plotting only 300 transcripts with the largest log fold change among all treatment comparisons."))
+```
+
 ```{r, eval = config$transcript_rnaseq, fig.height = fig_height_transcript_rnaseq_free, out.width = "100%"}
 # extract datasets
 lcpm_transcript_rnaseq <- log_counts_per_million$transcript_rnaseq
@@ -476,6 +553,10 @@ if (all(is.na(lcpm_transcript_rnaseq)) == FALSE & nrow(lcpm_transcript_rnaseq) >
 ```{r, eval = config$gene_rnaseq, results = "asis"}
 # optionally include/print markdown header for this section if being analysed
 base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = too_many_genes, results = "asis"}
+base::cat(base::paste0("Too many significant genes to plot. Plotting only 300 genes with the largest log fold change among all treatment comparisons."))
 ```
 
 ```{r, eval = config$gene_rnaseq, fig.height = fig_height_gene_rnaseq_free, out.width = "100%"}

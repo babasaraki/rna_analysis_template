@@ -1999,6 +1999,27 @@ DT::datatable(diff_expr_results %>%
 # write differential expression results to file
 diff_expr_results %>%
   utils::write.table(file = "./diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
+
+# extract a list of the significant genes/transcripts (at three significance levels)
+sig_diff_expr_data_1 <- diff_expr_results %>%
+  dplyr::filter(significance == "significant_1%") %>%
+  dplyr::select(gene_transcript) %>%
+  dplyr::distinct(gene_transcript)
+
+sig_diff_expr_data_5 <- diff_expr_results %>%
+  dplyr::filter(significance == "significant_5%") %>%
+  dplyr::select(gene_transcript) %>%
+  dplyr::distinct(gene_transcript)
+
+sig_diff_expr_data_10 <- diff_expr_results %>%
+  dplyr::filter(significance == "significant_10%") %>%
+  dplyr::select(gene_transcript) %>%
+  dplyr::distinct(gene_transcript)
+
+# also write these to file
+utils::write.csv(sig_diff_expr_data_1, file = "./diff_expr_results/sig_diff_expr_results_1.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_5, file = "./diff_expr_results/sig_diff_expr_results_5.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_10, file = "./diff_expr_results/sig_diff_expr_results_10.csv", row.names = FALSE)
 ```
 
 ```{r, cleanup, results = "hide"}

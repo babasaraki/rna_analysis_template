@@ -47,6 +47,3 @@ min_total_count: 15
 # see more info about this function/flag here: https://rdrr.io/bioc/limma/man/ebayes.html
 # typical values for lfc are log2(1.1), log2(1.2) or log2(1.5)
 min_lfc: "log2(1.1)"
-
-# p-value cutoff to consider an RNA significantly differentially expressed
-pvalue_cutoff: 0.1
