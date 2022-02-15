@@ -5,7 +5,6 @@
 The RNA-seq data was analysed with [rnaseq version 3.5](https://github.com/nf-core/rnaseq/tree/3.5) and [parabricks rna pipeline version 3.6.1](https://docs.nvidia.com/clara/parabricks/v3.6.1/text/rna_pipeline.html). The outputs of these pipelines were then analysed with the [rna_analysis_template 1.0.0](https://github.com/leahkemp/rna_analysis_template/releases/tag/1.0.0). The following treatment groups were compared for analysis:
 
 - treatment1 - treatment2
-- treatment1 - treatment3
 
 The full analysis has been documented so others can take a "deep dive" into the analysis to check/reproduce the work.
 
