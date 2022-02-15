@@ -1,0 +1,5 @@
+sample,fastq_1,fastq_2,strandedness
+ENCFF133KON,../fastq/ENCFF133KON.fastq.gz,,unstranded
+ENCFF837UEC,../fastq/ENCFF837UEC.fastq.gz,,unstranded
+ENCFF241KIB,../fastq/ENCFF241KIB.fastq.gz,,unstranded
+ENCFF248MER,../fastq/ENCFF248MER.fastq.gz,,unstranded
