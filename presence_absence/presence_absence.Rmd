@@ -1,0 +1,215 @@
+---
+title: "Presence/absence analysis"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+## Info
+
+```{r}
+# load libraries
+library(dplyr)
+library(plotly)
+library(gtools)
+library(DT)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
+# read in pre-prepared count data
+counts <- utils::read.csv("../prepare_counts/counts.csv")
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(file.path(config$metadata))
+
+# subset all count data to the count data specified to be analysed by the user in the config file
+# this will remove rows of data matching the said conditions
+
+if(config$transcript_rnaseq == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((dataset == "transcript") & (pipeline == "rnaseq")))
+  
+}
+
+if(config$gene_rnaseq == "FALSE") {
+  
+  counts <- counts %>%
+    dplyr::filter(!((dataset == "gene") & (pipeline == "rnaseq")))
+  
+}
+
+# make a little true/false vector that defines whether or not to evaluate rmarkdown chunks based on the number of treatments in the metadata file (up to 6 treatments)
+treatments_eval <- rep(TRUE, length(unique(metadata$treatment)))
+treatments_eval <- append(treatments_eval, rep(FALSE, 6))
+treatments_eval <- treatments_eval[1:6]
+
+# create a function for plotting datatables with my parameters
+create_dt <- function(data) {
+  data %>%
+    dplyr::mutate(across(c(gene_transcript), base::as.factor)) %>%
+    dplyr::mutate(across(c(contains("num_samples_")), base::as.integer)) %>%
+    dplyr::mutate(across(c(contains("prop_samples_")), base::as.double)) %>%
+    dplyr::mutate(across(c(contains("prop_samples_")), ~round(.x, digits = 2))) %>%
+    DT::datatable(filter = "top",
+                  rownames = FALSE,
+                  extensions = list("ColReorder" = NULL,
+                                    "Buttons" = NULL,
+                                    "FixedColumns" = list(leftColumns=1)),
+                  options = list(
+                    dom = "BRrltpi",
+                    autoWidth = TRUE,
+                    buttons =
+                      list("copy",
+                           list(extend = "collection",
+                                buttons = c("csv", "excel", "pdf"),
+                                text = "Download"),
+                           I("colvis"))))
+}
+```
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - transcript rnaseq: ", config$transcript_rnaseq, "\n",
+                       " - gene rnaseq: ", config$gene_rnaseq, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", length(unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
+## Presence/absence {.tabset .tabset-fade}
+
+```{r}
+# join counts with metadata
+counts_w_meta <- dplyr::full_join(counts, metadata, by = "sample")
+
+# separate the dataset by each treatment group
+data_list <- base::split(counts_w_meta, f = as.factor(counts_w_meta$treatment))
+
+# format and get only the columns we're interested in
+data_list <- base::lapply(data_list, function(x)
+  x %>%
+    base::as.data.frame() %>%
+    select(gene_transcript, sample, raw_counts, treatment)
+)
+
+# create a named list for accessing the number of samples in each treatment in below functions
+n_samples_treatment <- as.list(n_samples_by_treatment$n_samples)
+base::names(n_samples_treatment) <- n_samples_by_treatment$treatment
+
+# get the number of samples each gene/transcript is PRESENT in (for each treatment group)
+# set up function to do this
+get_presence <- function(df_list) {
+  
+  # pre-calculate the number of samples present in this treatment
+  no_samples <- base::eval(base::parse(text = base::paste0("n_samples_treatment$", unique(df_list$treatment), sep = "")))
+  
+  # pre-calculate the current treatment
+  cur_treatment <- unique(df_list$treatment)
+  
+  data <- df_list %>%
+    # filter out samples that had a count of zero (the gene/transcript WASN'T present in that sample)
+    dplyr::filter(raw_counts != 0) %>%
+    dplyr::group_by(gene_transcript) %>%
+    # get the number of samples the gene/transcript's are PRESENT in
+    dplyr::summarise(num_samples_present_in = n(),
+                     # get the proportion of samples the gene/transcript's are present in
+                     prop_samples_present_in = num_samples_present_in / no_samples) %>%
+    base::as.data.frame() %>%
+    # define the treatment we're talking about in the column names
+    dplyr::rename_with(function(old) base::paste0(old, '_', cur_treatment), .cols = c(num_samples_present_in, prop_samples_present_in))
+  
+  return(data)
+  
+}
+
+# apply my function to get presence data to my list of datafames
+presence <- base::lapply(data_list, get_presence)
+
+# get the number of samples each gene/transcript is ABSENT in (for each treatment group)
+# set up function to do this
+get_absence <- function(df_list) {
+  
+  # pre-calculate the number of samples present in this treatment
+  no_samples <- base::eval(base::parse(text = base::paste0("n_samples_treatment$", unique(df_list$treatment), sep = "")))
+  
+  # pre-calculate the current treatment
+  cur_treatment <- unique(df_list$treatment)
+  
+  data <- df_list %>%
+    # filter out samples that had a count of zero (the gene/transcript WASN'T present in that sample)
+    dplyr::filter(raw_counts == 0) %>%
+    dplyr::group_by(gene_transcript) %>%
+    # get the number of samples the gene/transcript's are PRESENT in
+    dplyr::summarise(num_samples_absent_in = n(),
+                     # get the proportion of samples the gene/transcript's are present in
+                     prop_samples_absent_in = num_samples_absent_in / no_samples) %>%
+    base::as.data.frame() %>%
+    # define the treatment we're talking about in the column names
+    dplyr::rename_with(function(old) base::paste0(old, '_', cur_treatment), .cols = c(num_samples_absent_in, prop_samples_absent_in))
+  
+  return(data)
+  
+}
+
+# apply my function to get presence data to my list of datafames
+absence <- base::lapply(data_list, get_absence)
+
+# collapse my list of dataframes into single dataframe
+presence <- base::Reduce(function(d1, d2) merge(d1, d2, by = "gene_transcript"), presence)
+absence <- base::Reduce(function(d1, d2) merge(d1, d2, by = "gene_transcript"), absence)
+
+# join all presence and absence data together
+all_data <- dplyr::full_join(presence, absence, by = "gene_transcript")
+```
+
+```{r}
+create_dt(all_data)
+```
+
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
+```
