@@ -2,9 +2,6 @@
 #####                GENERAL               ######
 #################################################
 
-# set the path to the directory containing the input fastq files
-fastq_dir: "/my_project/rna_analysis_template/test/fastq/"
-
 # set the path to your smncrna_analysis_template directory
 template_dir: "/my_project/rna_analysis_template/"
 
