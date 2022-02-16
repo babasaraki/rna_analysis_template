@@ -38,6 +38,10 @@ raw_gene_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_
   tibble::remove_rownames() %>%
   tibble::column_to_rownames(var="gene_transcript")
 
+# remove rows that are all 0 (no counts for that given gene/transcript found in any sample)
+raw_transcript_rnaseq_data <- raw_transcript_rnaseq_data[rowSums(raw_transcript_rnaseq_data[])>0,]
+raw_gene_rnaseq_data <- raw_gene_rnaseq_data[rowSums(raw_gene_rnaseq_data[])>0,]
+
 # create an empty list to put all the results of the issues to later return to user
 issues <- base::list()
 

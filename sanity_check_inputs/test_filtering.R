@@ -18,9 +18,36 @@ config <- yaml::yaml.load_file("./config/config.yaml")
 # read in metadata
 metadata <- utils::read.csv(base::file.path(config$metadata))
 
-# load all the count datasets (premade rds objects)
-raw_transcript_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_transcript_rnaseq_counts.rds"))
-raw_gene_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gene_rnaseq_counts.rds"))
+# load all the count datasets
+raw_transcript_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_dir,
+                                                                "star_salmon/salmon.merged.transcript_counts.tsv"),
+                                                header = TRUE,
+                                                stringsAsFactors = FALSE,
+                                                check.names = FALSE) %>%
+  # rename columns
+  dplyr::rename(gene_transcript = tx) %>%
+  # remove columns before normalization step
+  dplyr::select(-gene_id) %>%
+  # convert column to rowname so the data can be normalised later
+  tibble::remove_rownames() %>%
+  tibble::column_to_rownames(var="gene_transcript")
+
+raw_gene_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_dir,
+                                                          "star_salmon/salmon.merged.gene_counts_length_scaled.tsv"),
+                                          header = TRUE,
+                                          stringsAsFactors = FALSE,
+                                          check.names = FALSE) %>%
+  # rename columns
+  dplyr::rename(gene_transcript = gene_id) %>%
+  # remove columns before normalization step
+  dplyr::select(-gene_name) %>%
+  # convert column to rowname so the data can be normalised later
+  tibble::remove_rownames() %>%
+  tibble::column_to_rownames(var="gene_transcript")
+
+# remove rows that are all 0 (no counts for that given gene/transcript found in any sample)
+raw_transcript_rnaseq_data <- raw_transcript_rnaseq_data[rowSums(raw_transcript_rnaseq_data[])>0,]
+raw_gene_rnaseq_data <- raw_gene_rnaseq_data[rowSums(raw_gene_rnaseq_data[])>0,]
 
 # create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
 to_analyse <- config[c("transcript_rnaseq",
