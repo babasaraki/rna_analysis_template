@@ -145,7 +145,7 @@ counts <- dplyr::full_join(counts_cpm, counts_lcpm, by = c("gene_transcript", "s
 counts <- dplyr::full_join(counts, counts_raw, by = c("gene_transcript", "sample", "pipeline", "dataset"))
 
 # fix for css highlighting in expression plotting shiny app not working for genes/transcripts/rows with ":", "|" or "."
-# doing this here so the genes/transcripts are named consitantly throughout all documents
+# doing this here so the genes/transcripts are named consistently throughout all documents
 # | needed to be escaped with \\ in order to be interpreted correctly
 # also need to use gsub instead of sub to replace all occurrences instead of just the first one
 counts <- counts%>%
