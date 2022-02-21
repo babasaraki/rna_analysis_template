@@ -49,7 +49,7 @@ issues_raw_counts <- base::list()
 ## Check raw count data
 
 ```{r, eval = config$transcript_rnaseq}
-# load all the count datasets
+# load the count dataset
 raw_transcript_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_dir,
                                                                 "star_salmon/salmon.merged.transcript_counts.tsv"),
                                                 header = TRUE,
@@ -68,6 +68,7 @@ raw_transcript_rnaseq_data <- raw_transcript_rnaseq_data[rowSums(raw_transcript_
 ```
 
 ```{r, eval = config$gene_rnaseq}
+# load the count dataset
 raw_gene_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_dir,
                                                           "star_salmon/salmon.merged.gene_counts_length_scaled.tsv"),
                                           header = TRUE,
