@@ -64,10 +64,6 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 # read in metadata
 metadata <- utils::read.csv(base::file.path(config$metadata))
 
-# load all the count datasets (premade rds objects)
-raw_transcript_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_transcript_rnaseq_counts.rds"))
-raw_gene_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gene_rnaseq_counts.rds"))
-
 # create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
 to_eval_chunk <- config[c("transcript_rnaseq",
                           "gene_rnaseq")] %>%
@@ -118,26 +114,6 @@ contrasts_chunk_eval <- if(n_contrasts == 1) {
   contrasts_chunk_eval
 }
 
-# create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
-to_analyse <- config[c("transcript_rnaseq",
-                       "gene_rnaseq")] %>%
-  base::as.data.frame() %>%
-  base::t() %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("dataset") %>%
-  dplyr::rename("analyse" = "V1") %>%
-  tidyr::separate(dataset, c("dataset", "pipeline")) %>%
-  dplyr::filter(analyse == TRUE) %>%
-  dplyr::mutate(dataset_name = base::paste0(dataset, "_", pipeline)) %>%
-  dplyr::pull(dataset_name)
-
-# set up a vector of all the possible datasets to analyse
-count_datasets <- base::list(transcript_rnaseq = raw_transcript_rnaseq_data,
-                             gene_rnaseq = raw_gene_rnaseq_data)
-
-# filter all possible datasets by the datasets the user has specified to analyse
-count_datasets <- count_datasets[to_analyse]
-
 # evalutate/setup minimum logFC threshold
 min_logfc <- base::eval(base::parse(text = config$min_lfc))
 
@@ -161,6 +137,21 @@ treatments <- treatments[gtools::mixedorder(base::as.character(treatments$sample
 # extract only the conditions/groups and create a list out of it
 ordered_treatments <- treatments %>%
   dplyr::pull(treatment)
+```
+
+```{r, eval = config$transcript_rnaseq}
+# load count dataset (premade rds objects)
+raw_transcript_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_transcript_rnaseq_counts.rds"))
+```
+
+```{r, eval = config$gene_rnaseq}
+# load count dataset (premade rds objects)
+raw_gene_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gene_rnaseq_counts.rds"))
+```
+
+```{r}
+# make a list of all the count datasets in the global environment
+count_datasets <- base::do.call("list", base::mget(base::grep("_data", base::names(.GlobalEnv), value=TRUE)))
 
 # make sure the samples (columns) in all the datasets are in the same order for specifying the treatments downstream
 # (that depends on the columns being in the correct order)  (loop over all count datasets)
@@ -406,14 +397,14 @@ keep <- base::lapply(dge, function(x) {
 ```{r, eval = config$transcript_rnaseq}
 # filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
 # (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
-dge_transcript_rnaseq_filtered <- dge$transcript_rnaseq[keep$transcript_rnaseq,, keep.lib.sizes=FALSE] %>%
+dge_transcript_rnaseq_filtered <- dge$raw_transcript_rnaseq_data[keep$raw_transcript_rnaseq_data,, keep.lib.sizes=FALSE] %>%
   edgeR::calcNormFactors(method="TMM")
 ```
 
 ```{r, eval = config$gene_rnaseq}
 # filtering and calulating normalisation factors (I couldn't get this to work in a list of datasets)
 # (note. calcNormFactors doesn’t normalize the data, it just calculates normalization factors for use downstream)
-dge_gene_rnaseq_filtered <- dge$gene_rnaseq[keep$gene_rnaseq,, keep.lib.sizes=FALSE] %>%
+dge_gene_rnaseq_filtered <- dge$raw_gene_rnaseq_data[keep$raw_gene_rnaseq_data,, keep.lib.sizes=FALSE] %>%
   edgeR::calcNormFactors(method="TMM")
 ```
 
@@ -450,7 +441,7 @@ base::cat("#### transcripts's (rnaseq)")
 
 ```{r, eval = config$transcript_rnaseq, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-transcript_rnaseq_limmavoom_v <- limma::voom(dge_transcript_rnaseq_filtered,  model_matrix$transcript_rnaseq, plot=TRUE)
+transcript_rnaseq_limmavoom_v <- limma::voom(dge_transcript_rnaseq_filtered,  model_matrix$raw_transcript_rnaseq_data, plot=TRUE)
 ```
 
 ```{r, eval = config$gene_rnaseq, results = "asis"}
@@ -460,7 +451,7 @@ base::cat("#### gene's (rnaseq)")
 
 ```{r, eval = config$gene_rnaseq, out.width = "100%"}
 # remove heteroscedascity from count data and plot mean variance
-gene_rnaseq_limmavoom_v <- limma::voom(dge_gene_rnaseq_filtered,  model_matrix$gene_rnaseq, plot=TRUE)
+gene_rnaseq_limmavoom_v <- limma::voom(dge_gene_rnaseq_filtered,  model_matrix$raw_gene_rnaseq_data, plot=TRUE)
 ```
 
 ### Residual variances {.tabset .tabset-fade}
@@ -474,10 +465,10 @@ base::cat("#### transcript's (rnaseq)")
 
 ```{r, eval = config$transcript_rnaseq, out.width = "100%"}
 # fit model to the expression values for each gene/transcript
-transcript_rnaseq_limmavoom_vfit <- limma::lmFit(transcript_rnaseq_limmavoom_v, model_matrix$transcript_rnaseq)
+transcript_rnaseq_limmavoom_vfit <- limma::lmFit(transcript_rnaseq_limmavoom_v, model_matrix$raw_transcript_rnaseq_data)
 
 # estimate contrast for each transcript
-transcript_rnaseq_limmavoom_vfit <- limma::contrasts.fit(transcript_rnaseq_limmavoom_vfit, contr_matrix$transcript_rnaseq)
+transcript_rnaseq_limmavoom_vfit <- limma::contrasts.fit(transcript_rnaseq_limmavoom_vfit, contr_matrix$raw_transcript_rnaseq_data)
 
 # empirical Bayes moderation - obtain more precise estimates of transcript variability
 transcript_rnaseq_limmavoom_efit <- limma::eBayes(transcript_rnaseq_limmavoom_vfit)
@@ -493,10 +484,10 @@ base::cat("#### gene's (rnaseq)")
 
 ```{r, eval = config$gene_rnaseq, out.width = "100%"}
 # fit model to the expression values for each gene/transcript
-gene_rnaseq_limmavoom_vfit <- limma::lmFit(gene_rnaseq_limmavoom_v, model_matrix$gene_rnaseq)
+gene_rnaseq_limmavoom_vfit <- limma::lmFit(gene_rnaseq_limmavoom_v, model_matrix$raw_gene_rnaseq_data)
 
 # estimate contrast for each gene
-gene_rnaseq_limmavoom_vfit <- limma::contrasts.fit(gene_rnaseq_limmavoom_vfit, contr_matrix$gene_rnaseq)
+gene_rnaseq_limmavoom_vfit <- limma::contrasts.fit(gene_rnaseq_limmavoom_vfit, contr_matrix$raw_gene_rnaseq_data)
 
 # empirical Bayes moderation - obtain more precise estimates of gene-wise variability
 gene_rnaseq_limmavoom_efit <- limma::eBayes(gene_rnaseq_limmavoom_vfit)
@@ -1158,14 +1149,14 @@ base::cat("#### transcript's (rnaseq)")
 
 ```{r, eval = config$transcript_rnaseq, out.width = "100%"}
 # plot
-data <- deseq_results_1$transcript_rnaseq
+data <- deseq_results_1$raw_transcript_rnaseq_data
 W <- data$stat
-maxCooks <- base::apply(SummarizedExperiment::assays(deseq$transcript_rnaseq)[["cooks"]], 1, base::max)
+maxCooks <- base::apply(SummarizedExperiment::assays(deseq$raw_transcript_rnaseq_data)[["cooks"]], 1, base::max)
 idx <- !is.na(W)
 base::plot(rank(W[idx]), maxCooks[idx], xlab = "rank of Wald statistic", 
            ylab = "maximum Cook's distance per gene/transcript",
            ylim = c(0, 5), cex = .4, col = rgb(0, 0, 0, .3))
-m <- base::ncol(deseq$transcript_rnaseq)
+m <- base::ncol(deseq$raw_transcript_rnaseq_data)
 p <- 3
 graphics::abline(h = qf(.99, p, m - p))
 ```
@@ -1177,14 +1168,14 @@ base::cat("#### gene's (rnaseq)")
 
 ```{r, eval = config$gene_rnaseq, out.width = "100%"}
 # plot
-data <- deseq_results_1$gene_rnaseq
+data <- deseq_results_1$raw_gene_rnaseq_data
 W <- data$stat
-maxCooks <- base::apply(SummarizedExperiment::assays(deseq$gene_rnaseq)[["cooks"]], 1, base::max)
+maxCooks <- base::apply(SummarizedExperiment::assays(deseq$raw_gene_rnaseq_data)[["cooks"]], 1, base::max)
 idx <- !is.na(W)
 base::plot(rank(W[idx]), maxCooks[idx], xlab = "rank of Wald statistic", 
            ylab = "maximum Cook's distance per gene/transcript",
            ylim = c(0, 5), cex = .4, col = rgb(0, 0, 0, .3))
-m <- base::ncol(deseq$gene_rnaseq)
+m <- base::ncol(deseq$raw_gene_rnaseq_data)
 p <- 3
 graphics::abline(h = qf(.99, p, m - p))
 ```
