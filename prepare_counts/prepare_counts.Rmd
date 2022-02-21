@@ -107,8 +107,8 @@ counts_cpm <- base::lapply(base::seq_along(count_datasets), function(y, pipeline
     # the underscore
     dplyr::mutate(pipeline = pipeline[[i]])
 }, y=count_datasets,
-dataset=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
-pipeline=base::sub(".*\\_", "", base::paste(base::names(count_datasets)))
+dataset=base::gsub("(raw_)|(_rnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", base::paste(base::names(count_datasets)))
 )
 
 # calculate log counts per million (loop over all the count datasets the user has specified)
@@ -132,8 +132,8 @@ counts_lcpm <- base::lapply(seq_along(count_datasets), function(y, pipeline, dat
     # the underscore
     dplyr::mutate(pipeline = pipeline[[i]])
 }, y=count_datasets,
-dataset=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
-pipeline=base::sub(".*\\_", "", base::paste(base::names(count_datasets)))
+dataset=base::gsub("(raw_)|(_rnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", base::paste(base::names(count_datasets)))
 )
 
 # prepare raw counts (loop over all the count datasets the user has specified)
@@ -157,8 +157,8 @@ counts_raw <- base::lapply(seq_along(count_datasets), function(y, pipeline, data
     # the underscore
     dplyr::mutate(pipeline = pipeline[[i]])
 }, y=count_datasets,
-dataset=base::sub("\\_.*", "", base::paste(base::names(count_datasets))),
-pipeline=base::sub(".*\\_", "", base::paste(base::names(count_datasets)))
+dataset=base::gsub("(raw_)|(_rnaseq_data)", "", base::paste(base::names(count_datasets))),
+pipeline=base::gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", base::paste(base::names(count_datasets)))
 )
 
 # collapse my list of dataframes into single dataframes
