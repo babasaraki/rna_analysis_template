@@ -1,3 +1,34 @@
+---
+title: "Prepare counts"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+```{r}
 # load libraries
 library(dplyr)
 library(textshape)
@@ -6,10 +37,15 @@ library(tibble)
 library(gtools)
 library(janitor)
 
-# read in yaml config file
-config <- yaml::yaml.load_file("./config/config.yaml")
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 
-# load all the count datasets
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+```
+
+```{r, eval = config$transcript_rnaseq}
+# load the count dataset
 raw_transcript_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_dir,
                                                                 "star_salmon/salmon.merged.transcript_counts.tsv"),
                                                 header = TRUE,
@@ -23,6 +59,12 @@ raw_transcript_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_re
   tibble::remove_rownames() %>%
   tibble::column_to_rownames(var="gene_transcript")
 
+# remove rows that are all 0 (no counts for that given gene/transcript found in any sample)
+raw_transcript_rnaseq_data <- raw_transcript_rnaseq_data[rowSums(raw_transcript_rnaseq_data[])>0,]
+```
+
+```{r, eval = config$gene_rnaseq}
+# load the count dataset
 raw_gene_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_dir,
                                                           "star_salmon/salmon.merged.gene_counts_length_scaled.tsv"),
                                           header = TRUE,
@@ -37,28 +79,12 @@ raw_gene_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_
   tibble::column_to_rownames(var="gene_transcript")
 
 # remove rows that are all 0 (no counts for that given gene/transcript found in any sample)
-raw_transcript_rnaseq_data <- raw_transcript_rnaseq_data[rowSums(raw_transcript_rnaseq_data[])>0,]
 raw_gene_rnaseq_data <- raw_gene_rnaseq_data[rowSums(raw_gene_rnaseq_data[])>0,]
+```
 
-# create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
-to_analyse <- config[c("transcript_rnaseq",
-                       "gene_rnaseq")] %>%
-  base::as.data.frame() %>%
-  base::t() %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("dataset") %>%
-  dplyr::rename("analyse" = "V1") %>%
-  tidyr::separate(dataset, c("dataset", "pipeline")) %>%
-  dplyr::filter(analyse == TRUE) %>%
-  dplyr::mutate(dataset_name = base::paste0(dataset, "_", pipeline)) %>%
-  dplyr::pull(dataset_name)
-
-# set up a vector of all the possible datasets to analyse
-count_datasets <- base::list(transcript_rnaseq = raw_transcript_rnaseq_data,
-                             gene_rnaseq = raw_gene_rnaseq_data)
-
-# filter all possible datasets by the datasets the user has specified to analyse
-count_datasets <- count_datasets[to_analyse]
+```{r}
+# make a list of all the count datasets in the global environment
+count_datasets <- base::do.call("list", base::mget(base::grep("_data", base::names(.GlobalEnv), value=TRUE)))
 
 # calculate counts per million (loop over all the count datasets the user has specified)
 counts_cpm <- base::lapply(base::seq_along(count_datasets), function(y, pipeline, dataset, i){
@@ -152,41 +178,74 @@ counts <- counts%>%
   dplyr::mutate(gene_transcript = base::gsub(":|\\||\\.", "_", gene_transcript))
 
 # write the data to a csv file so I can use it in other documents
-utils::write.csv(counts, "./prepare_counts/counts.csv", row.names = FALSE)
+utils::write.csv(counts, "./counts.csv", row.names = FALSE)
+```
 
+## csv file
+
+```{r, results = "asis"}
+base::cat(base::paste0("The following csv file with all count data has been created: ", "\n\n"))
+base::cat(base::paste0(base::list.files(".", pattern = "counts.csv"), sep = "\n\n"))
+```
+
+```{r}
 # also save some rds objects
-dir.create("./prepare_counts/rds_objects/", showWarnings = FALSE)
+dir.create("./rds_objects/", showWarnings = FALSE)
+```
 
+## RDS objects
+
+```{r, eval = config$transcript_rnaseq}
 # natural sorting of columns/sample names
-raw_transcript_rnaseq_data <- raw_transcript_rnaseq_data %>%
+raw_mirna_smrnaseq_data <- raw_transcript_rnaseq_data %>%
   dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
 
-raw_gene_rnaseq_data <- raw_gene_rnaseq_data %>%
-  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
-
-# also apply changes to gene/transcript names here
+# also apply changes to RNA names here
 rownames(raw_transcript_rnaseq_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_transcript_rnaseq_data))
-rownames(raw_gene_rnaseq_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_gene_rnaseq_data))
 
 # calculate counts per million
 cpm_transcript_rnaseq_data <- raw_transcript_rnaseq_data %>%
-  edgeR::cpm()
-cpm_gene_rnaseq_data <- raw_gene_rnaseq_data %>%
   edgeR::cpm()
 
 # calculate log counts per million
 lcpm_transcript_rnaseq_data <- raw_transcript_rnaseq_data %>%
   edgeR::cpm(log = TRUE)
+
+# save to file
+base::saveRDS(raw_transcript_rnaseq_data, file = "./rds_objects/raw_transcript_rnaseq_counts.rds")
+base::saveRDS(cpm_transcript_rnaseq_data, file = "./rds_objects/cpm_transcript_rnaseq_counts.rds")
+base::saveRDS(lcpm_transcript_rnaseq_data, file = "./rds_objects/lcpm_transcript_rnaseq_counts.rds")
+```
+
+```{r, eval = config$gene_rnaseq}
+# natural sorting of columns/sample names
+raw_gene_rnaseq_data <- raw_gene_rnaseq_data %>%
+  dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
+
+# also apply changes to RNA names here
+rownames(raw_gene_rnaseq_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_gene_rnaseq_data))
+
+# calculate counts per million
+cpm_gene_rnaseq_data <- raw_gene_rnaseq_data %>%
+  edgeR::cpm()
+
+# calculate log counts per million
 lcpm_gene_rnaseq_data <- raw_gene_rnaseq_data %>%
   edgeR::cpm(log = TRUE)
 
-# save all rds objects to file
-base::saveRDS(raw_transcript_rnaseq_data, file = "./prepare_counts/rds_objects/raw_transcript_rnaseq_counts.rds")
-base::saveRDS(raw_gene_rnaseq_data, file = "./prepare_counts/rds_objects/raw_gene_rnaseq_counts.rds")
-base::saveRDS(cpm_transcript_rnaseq_data, file = "./prepare_counts/rds_objects/cpm_transcript_rnaseq_counts.rds")
-base::saveRDS(cpm_gene_rnaseq_data, file = "./prepare_counts/rds_objects/cpm_gene_rnaseq_counts.rds")
-base::saveRDS(lcpm_transcript_rnaseq_data, file = "./prepare_counts/rds_objects/lcpm_transcript_rnaseq_counts.rds")
-base::saveRDS(lcpm_gene_rnaseq_data, file = "./prepare_counts/rds_objects/lcpm_gene_rnaseq_counts.rds")
+# save to file
+base::saveRDS(raw_gene_rnaseq_data, file = "./rds_objects/raw_gene_rnaseq_counts.rds")
+base::saveRDS(cpm_gene_rnaseq_data, file = "./rds_objects/cpm_gene_rnaseq_counts.rds")
+base::saveRDS(lcpm_gene_rnaseq_data, file = "./rds_objects/lcpm_gene_rnaseq_counts.rds")
+```
 
+```{r, results = "asis"}
+# return message to user
+base::cat(base::paste0("The following RDS objects have been created: ", "\n\n"))
+base::cat(base::paste0(base::list.files("./rds_objects/"), sep = "\n\n"))
+```
+
+```{r, cleanup, results = "hide"}
 # clean up
 rm(list = ls())
+```
