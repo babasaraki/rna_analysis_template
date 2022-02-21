@@ -105,7 +105,7 @@ if(too_many_genes == TRUE) {
   
   sig_genes <- sig_genes %>%
     # get the RNA names
-    dplyr::pull(rna) %>%
+    dplyr::pull(gene_transcript) %>%
     # get the unique genes (since there can be multiple rows for a given gene)
     base::unique()
   
@@ -130,7 +130,7 @@ if(too_many_transcripts == TRUE) {
   
   sig_transcripts <- sig_transcripts %>%
     # get the RNA names
-    dplyr::pull(rna) %>%
+    dplyr::pull(gene_transcript) %>%
     # get the unique transcripts (since there can be multiple rows for a given transcript)
     base::unique()
   
@@ -138,6 +138,21 @@ if(too_many_transcripts == TRUE) {
 
 # merge genes/transcripts list back together
 sig_gene_transcripts <- c(sig_genes, sig_transcripts)
+```
+
+```{r, eval = config$transcript_rnaseq}
+# load count dataset (premade rds objects)
+lcpm_transcript_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_transcript_rnaseq_counts.rds"))
+```
+
+```{r, eval = config$gene_rnaseq}
+# load count dataset (premade rds objects)
+lcpm_gene_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_gene_rnaseq_counts.rds"))
+```
+
+```{r}
+# make a list of all the count datasets in the global environment
+lcpm_datasets <- base::do.call("list", base::mget(base::grep("lcpm_", base::names(.GlobalEnv), value=TRUE)))
 
 # get the significantly differentially expressed genes/transcripts (loop over all count datasets)
 log_counts_per_million <- base::lapply(lcpm_datasets, function(x)
