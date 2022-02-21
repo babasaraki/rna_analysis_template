@@ -175,8 +175,8 @@ all_widths <- metadata %>%
   dplyr::pull(n_samples)
 
 # set heatmap figure heights to automatically scale to how many rows are present in the data
-fig_height_transcript_rnaseq <- base::nrow(log_counts_per_million$lcpm_transcript_rnaseq_data) / 6
-fig_height_gene_rnaseq <- base::nrow(log_counts_per_million$lcpm_gene_rnaseq_data) / 6
+fig_height_transcript_rnaseq <- base::nrow(log_counts_per_million$lcpm_transcript_rnaseq_data) / 5
+fig_height_gene_rnaseq <- base::nrow(log_counts_per_million$lcpm_gene_rnaseq_data) / 5
 
 fig_height_transcript_rnaseq_free <- base::nrow(log_counts_per_million$lcpm_transcript_rnaseq_data) / 4
 fig_height_gene_rnaseq_free <- base::nrow(log_counts_per_million$lcpm_gene_rnaseq_data) / 4
