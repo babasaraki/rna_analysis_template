@@ -41,7 +41,7 @@ rmarkdown::render("./sanity_check_inputs/sanity_check_raw_counts.Rmd")
 *This will output a csv file with raw, counts per million and log counts per million for all samples and RNA species (./prepare_counts/counts.csv)*
 
 ```{r}
-base::source("./prepare_counts/prepare_counts.R")
+rmarkdown::render("./prepare_counts/prepare_counts.Rmd")
 ```
 
 ## MDS plots
