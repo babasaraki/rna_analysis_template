@@ -521,8 +521,8 @@ limma_voom_results_1 <- base::do.call(rbind, limma_voom_results_1)
 limma_voom_results_1 <- limma_voom_results_1 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -558,8 +558,8 @@ limma_voom_results_2 <- base::do.call(rbind, limma_voom_results_2)
 limma_voom_results_2 <- limma_voom_results_2 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[2]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -595,8 +595,8 @@ limma_voom_results_3 <- base::do.call(rbind, limma_voom_results_3)
 limma_voom_results_3 <- limma_voom_results_3 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[3]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -632,8 +632,8 @@ limma_voom_results_4 <- base::do.call(rbind, limma_voom_results_4)
 limma_voom_results_4 <- limma_voom_results_4 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -672,8 +672,8 @@ limma_voom_results_5 <- base::do.call(rbind, limma_voom_results_5)
 limma_voom_results_5 <- limma_voom_results_5 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[5]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -709,8 +709,8 @@ limma_voom_results_6 <- base::do.call(rbind, limma_voom_results_6)
 limma_voom_results_6 <- limma_voom_results_6 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[6]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
@@ -1197,8 +1197,8 @@ deseq_results_1 <- do.call(rbind, deseq_results_1)
 deseq_results_1 <- deseq_results_1 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1227,8 +1227,8 @@ deseq_results_2 <- do.call(rbind, deseq_results_2)
 deseq_results_2 <- deseq_results_2 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[2]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1257,8 +1257,8 @@ deseq_results_3 <- do.call(rbind, deseq_results_3)
 deseq_results_3 <- deseq_results_3 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%%
   dplyr::mutate(comparison = config$contrasts[3]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1287,8 +1287,8 @@ deseq_results_4 <- do.call(rbind, deseq_results_4)
 deseq_results_4 <- deseq_results_4 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1317,8 +1317,8 @@ deseq_results_5 <- do.call(rbind, deseq_results_5)
 deseq_results_5 <- deseq_results_5 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[5]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -1347,8 +1347,8 @@ deseq_results_6 <- do.call(rbind, deseq_results_6)
 deseq_results_6 <- deseq_results_6 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(dataset = gsub("_.*", "", source)) %>%
-  dplyr::mutate(pipeline = gsub(".*_", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[6]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
