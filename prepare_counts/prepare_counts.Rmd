@@ -200,7 +200,7 @@ dir.create("./rds_objects/", showWarnings = FALSE)
 raw_mirna_smrnaseq_data <- raw_transcript_rnaseq_data %>%
   dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
 
-# also apply changes to RNA names here
+# also apply changes to gene/transcript names here
 rownames(raw_transcript_rnaseq_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_transcript_rnaseq_data))
 
 # calculate counts per million
@@ -222,7 +222,7 @@ base::saveRDS(lcpm_transcript_rnaseq_data, file = "./rds_objects/lcpm_transcript
 raw_gene_rnaseq_data <- raw_gene_rnaseq_data %>%
   dplyr::select(gtools::mixedsort(tidyselect::peek_vars()))
 
-# also apply changes to RNA names here
+# also apply changes to gene/transcript names here
 rownames(raw_gene_rnaseq_data) <- base::gsub(":|\\||\\.", "_", rownames(raw_gene_rnaseq_data))
 
 # calculate counts per million
