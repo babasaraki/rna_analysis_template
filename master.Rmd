@@ -20,12 +20,20 @@ Restore the [renv](https://rstudio.github.io/renv/) to install all of the packag
 renv::restore()
 ```
 
-## Sanity check inputs
+## Sanity check config/metadata
 
-*This will check for some common issues in the input configuration/metadata/raw count data. Please address any issues flagged before continuing.*
+*This will check for some common issues in the input configuration/metadata files. Please address any issues flagged in the output html file (./sanity_check_inputs/sanity_check_config_metadata.html) before continuing.*
 
-```{r, warning = FALSE}
-base::source("./sanity_check_inputs/sanity_check_inputs.R")
+```{r}
+rmarkdown::render("./sanity_check_inputs/sanity_check_config_metadata.Rmd")
+```
+
+## Sanity check raw count data
+
+*This will check for some common issues in the input raw count data. Please address any issues flagged in the output html file (./sanity_check_inputs/sanity_check_raw_counts.html) before continuing.*
+
+```{r}
+rmarkdown::render("./sanity_check_inputs/sanity_check_raw_counts.Rmd")
 ```
 
 ## Prepare count data
@@ -38,7 +46,7 @@ base::source("./prepare_counts/prepare_counts.R")
 
 ## MDS plots
 
-*This will output an interactive html document exploring the multidimentional scaling (MDS) of the RNA's (./mds/mds.html) as well as csv files with raw mds data (./mds/mds_results/)*
+*This will output an interactive html document exploring the multidimensional scaling (MDS) of the RNA's (./mds/mds.html) as well as csv files with raw mds data (./mds/mds_results/)*
 
 ```{r}
 rmarkdown::render("./mds/mds.Rmd")
