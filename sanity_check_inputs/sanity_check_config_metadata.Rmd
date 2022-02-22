@@ -57,7 +57,7 @@ missing_values_in_config <- base::lapply(config, is.null)
 missing_values_in_config <- base::which(base::unlist(missing_values_in_config))
 
 # if there is a missing value in the config file, create a message to append to my list of issues
-if (base::length(missing_values_in_config >= 1)) {
+if (base::length(missing_values_in_config > 0)) {
   
   issues_config <- c(issues_config, base::paste0("The following values are missing in the configuaration file: '", base::names(missing_values_in_config)))
   
@@ -161,7 +161,7 @@ if (base::length(issues_config) == 0) {
   
 }
 
-if (base::length(issues_config) >= 1) {
+if (base::length(issues_config) > 0) {
   
   message_for_user <- issues_config
   
@@ -249,7 +249,7 @@ samples_per_treatment <- metadata %>%
   dplyr::pull(n_samples)
 
 # append message if requirement not satisfied
-if ((file.exists(config$metadata_path) == TRUE) & (all(samples_per_treatment >= 2) == FALSE)) {
+if ((file.exists(config$metadata_path) == TRUE) & (all(samples_per_treatment > 1) == FALSE)) {
   
   issues_metadata <- c(issues_metadata, base::paste0("There appears to be treatment groups with less than 2 samples per treatment (no replicates) based on the metadata file at ",
                                                      config$metadata_path,
@@ -266,7 +266,7 @@ if (base::length(issues_metadata) == 0) {
   
 }
 
-if (base::length(issues_metadata) >= 1) {
+if (base::length(issues_metadata) > 0) {
   
   message_for_user <- issues_metadata
   
