@@ -33,14 +33,7 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FA
 mkdir -p diff_expr_results/
 ```
 
-## Info
-
-General info:
-
-- Two methods were employed to undertake a differential expression analysis, namely [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
-- Some values have been rounded
-
-```{r, data_prep, results = "hide"}
+```{r}
 # load libraries
 library(dplyr)
 library(limma)
@@ -63,7 +56,28 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
 metadata <- utils::read.csv(base::file.path(config$metadata))
+```
 
+## Info
+
+General info:
+
+- Two methods were employed to undertake a differential expression analysis, namely [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
+- Some values have been rounded
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
+                       " - mirna excerpt: ", config$mirna_excerpt, "\n",
+                       " - pirna excerpt: ", config$pirna_excerpt, "\n",
+                       " - trna excerpt: ", config$trna_excerpt, "\n",
+                       " - circrna excerpt: ", config$circrna_excerpt, "\n",
+                       " - gencode excerpt: ", config$gencode_excerpt, "\n"))
+```
+
+```{r, results = "hide"}
 # create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
 to_eval_chunk <- config[c("transcript_rnaseq",
                           "gene_rnaseq")] %>%
