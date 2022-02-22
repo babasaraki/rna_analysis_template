@@ -75,7 +75,7 @@ treatments_eval <- treatments_eval[1:6]
 create_dt <- function(data) {
   data %>%
     dplyr::select(-(contains("prop_samples_"))) %>%
-    dplyr::mutate(across(c(rna), base::as.factor)) %>%
+    dplyr::mutate(across(c(gene_transcript), base::as.factor)) %>%
     dplyr::mutate(across(c(contains("num_samples_")), base::as.integer)) %>%
     DT::datatable(filter = "top",
               rownames = FALSE,
@@ -210,7 +210,7 @@ all_data <- dplyr::full_join(presence, absence, by = "gene_transcript")
 # pretty format column names for table
 colnames_pretty <- all_data %>%
   # get the columns that will be present in the table
-  dplyr::select(dplyr::contains(c("rna", "num_"))) %>%
+  dplyr::select(dplyr::contains(c("gene_transcript", "num_"))) %>%
   # get column names
   base::colnames()
 
@@ -219,8 +219,8 @@ colnames_pretty <- base::gsub("_", " ", colnames_pretty) %>%
   # convert to sentence case
   stringr::str_to_sentence()
 
-# set RNA to uppercase
-colnames_pretty[1] <- "RNA"
+# set gene/transcript to uppercase
+colnames_pretty[1] <- "gene/transcript"
 
 # wording
 colnames_pretty <- base::gsub("Num", "Number of", colnames_pretty)
