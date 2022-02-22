@@ -135,6 +135,21 @@ if (file.exists(config$rnaseq_results_dir) == FALSE) {
   issues_config <- c(issues_config, base::paste0("Directory passed to 'rnaseq_results_dir' in the configuration file doesn't exist."))
   
 }
+
+# check the files the template will be grabbing exist
+if (base::file.exists(base::file.path(config$rnaseq_results_dir, "star_salmon/salmon.merged.transcript_counts.tsv")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the rnaseq transcript count dataset to be analysed based on the directory passed to 'rnaseq_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$rnaseq_results_dir, "star_salmon/salmon.merged.transcript_counts.tsv")))
+  
+}
+
+if (base::file.exists(base::file.path(config$rnaseq_results_dir, "star_salmon/salmon.merged.gene_counts_length_scaled.tsv")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the rnaseq gene count dataset to be analysed based on the directory passed to 'rnaseq_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$rnaseq_results_dir, "star_salmon/salmon.merged.gene_counts_length_scaled.tsv")))
+  
+}
 ```
 
 ```{r}
