@@ -74,24 +74,27 @@ treatments_eval <- treatments_eval[1:6]
 # create a function for plotting datatables with my parameters
 create_dt <- function(data) {
   data %>%
-    dplyr::mutate(across(c(gene_transcript), base::as.factor)) %>%
+    dplyr::select(-(contains("prop_samples_"))) %>%
+    dplyr::mutate(across(c(rna), base::as.factor)) %>%
     dplyr::mutate(across(c(contains("num_samples_")), base::as.integer)) %>%
-    dplyr::mutate(across(c(contains("prop_samples_")), base::as.double)) %>%
-    dplyr::mutate(across(c(contains("prop_samples_")), ~round(.x, digits = 2))) %>%
     DT::datatable(filter = "top",
-                  rownames = FALSE,
-                  extensions = list("ColReorder" = NULL,
-                                    "Buttons" = NULL,
-                                    "FixedColumns" = list(leftColumns=1)),
-                  options = list(
-                    dom = "BRrltpi",
-                    autoWidth = TRUE,
-                    buttons =
-                      list("copy",
-                           list(extend = "collection",
-                                buttons = c("csv", "excel", "pdf"),
-                                text = "Download"),
-                           I("colvis"))))
+              rownames = FALSE,
+              colnames = colnames_pretty,
+              extensions = list("ColReorder" = NULL,
+                                "Buttons" = NULL,
+                                "FixedColumns" = list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                columnDefs = list(list(width = "200px", targets = 0)),
+                lengthMenu = list(c(10, 50, -1), c("10", "50", "All")),
+                ColReorder = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
 }
 ```
 
@@ -203,6 +206,24 @@ absence <- base::Reduce(function(d1, d2) merge(d1, d2, by = "gene_transcript"), 
 
 # join all presence and absence data together
 all_data <- dplyr::full_join(presence, absence, by = "gene_transcript")
+
+# pretty format column names for table
+colnames_pretty <- all_data %>%
+  # get the columns that will be present in the table
+  dplyr::select(dplyr::contains(c("rna", "num_"))) %>%
+  # get column names
+  base::colnames()
+
+# remove underscores
+colnames_pretty <- base::gsub("_", " ", colnames_pretty) %>%
+  # convert to sentence case
+  stringr::str_to_sentence()
+
+# set RNA to uppercase
+colnames_pretty[1] <- "RNA"
+
+# wording
+colnames_pretty <- base::gsub("Num", "Number of", colnames_pretty)
 ```
 
 ```{r}
