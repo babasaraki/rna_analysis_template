@@ -522,26 +522,26 @@ limma_voom_results_1 <- base::lapply(efit, function(x) {
     limma::topTreat(coef = 1,
                     n = Inf,
                     adjust.method = "BH") %>%
-    tibble::rownames_to_column("rna")
+    tibble::rownames_to_column("gene_transcript")
   
 })
 
 # collapse the list of dataframes into one
 limma_voom_results_1 <- base::do.call(rbind, limma_voom_results_1)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 limma_voom_results_1 <- limma_voom_results_1 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[1]) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 
 # select only some columns we're interested in
 limma_voom_results_1 <- limma_voom_results_1 %>%
-  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+  select(gene_transcript, dataset, P.Value, adj.P.Val, logFC, pipeline, comparison, diff_expr_method)
 
 # rename adjusted p-value column before join
 limma_voom_results_1 <- limma_voom_results_1 %>%
@@ -563,26 +563,26 @@ limma_voom_results_2 <- base::lapply(efit, function(x) {
     limma::topTreat(coef = 2,
                     n = Inf,
                     adjust.method = "BH") %>%
-    tibble::rownames_to_column("rna")
+    tibble::rownames_to_column("gene_transcript")
   
 })
 
 # collapse the list of dataframes into one
 limma_voom_results_2 <- base::do.call(rbind, limma_voom_results_2)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 limma_voom_results_2 <- limma_voom_results_2 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[2]) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 
 # select only some columns we're interested in
 limma_voom_results_2 <- limma_voom_results_2 %>%
-  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+  select(gene_transcript, dataset, P.Value, adj.P.Val, logFC, pipeline, comparison, diff_expr_method)
 
 # rename adjusted p-value column before join
 limma_voom_results_2 <- limma_voom_results_2 %>%
@@ -604,26 +604,26 @@ limma_voom_results_3 <- base::lapply(efit, function(x) {
     limma::topTreat(coef = 3,
                     n = Inf,
                     adjust.method = "BH") %>%
-    tibble::rownames_to_column("rna")
+    tibble::rownames_to_column("gene_transcript")
   
 })
 
 # collapse the list of dataframes into one
 limma_voom_results_3 <- base::do.call(rbind, limma_voom_results_3)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 limma_voom_results_3 <- limma_voom_results_3 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[3]) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 
 # select only some columns we're interested in
 limma_voom_results_3 <- limma_voom_results_3 %>%
-  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+  select(gene_transcript, dataset, P.Value, adj.P.Val, logFC, pipeline, comparison, diff_expr_method)
 
 # rename adjusted p-value column before join
 limma_voom_results_3 <- limma_voom_results_3 %>%
@@ -645,26 +645,26 @@ limma_voom_results_4 <- base::lapply(efit, function(x) {
     limma::topTreat(coef = 4,
                     n = Inf,
                     adjust.method = "BH") %>%
-    tibble::rownames_to_column("rna")
+    tibble::rownames_to_column("gene_transcript")
   
 })
 
 # collapse the list of dataframes into one
 limma_voom_results_4 <- base::do.call(rbind, limma_voom_results_4)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 limma_voom_results_4 <- limma_voom_results_4 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 
 # select only some columns we're interested in
 limma_voom_results_4 <- limma_voom_results_4 %>%
-  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+  select(gene_transcript, dataset, P.Value, adj.P.Val, logFC, pipeline, comparison, diff_expr_method)
 
 # rename adjusted p-value column before join
 limma_voom_results_4 <- limma_voom_results_4 %>%
@@ -686,26 +686,26 @@ limma_voom_results_5 <- base::lapply(efit, function(x) {
     limma::topTreat(coef = 5,
                     n = Inf,
                     adjust.method = "BH") %>%
-    tibble::rownames_to_column("rna")
+    tibble::rownames_to_column("gene_transcript")
   
 })
 
 # collapse the list of dataframes into one
 limma_voom_results_5 <- base::do.call(rbind, limma_voom_results_5)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 limma_voom_results_5 <- limma_voom_results_5 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(_excerpt)|(_smrnaseq)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(mirna_)|(pirna_)|(trna_)|(circrna_)|(gencode_)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[5]) %>%
+  dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 
 # select only some columns we're interested in
 limma_voom_results_5 <- limma_voom_results_5 %>%
-  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+  select(gene_transcript, dataset, P.Value, adj.P.Val, logFC, pipeline, comparison, diff_expr_method)
 
 # rename adjusted p-value column before join
 limma_voom_results_5 <- limma_voom_results_5 %>%
@@ -727,14 +727,14 @@ limma_voom_results_6 <- base::lapply(efit, function(x) {
     limma::topTreat(coef = 6,
                     n = Inf,
                     adjust.method = "BH") %>%
-    tibble::rownames_to_column("rna")
+    tibble::rownames_to_column("gene_transcript")
   
 })
 
 # collapse the list of dataframes into one
 limma_voom_results_6 <- base::do.call(rbind, limma_voom_results_6)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 limma_voom_results_6 <- limma_voom_results_6 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
@@ -746,7 +746,7 @@ limma_voom_results_6 <- limma_voom_results_6 %>%
 
 # select only some columns we're interested in
 limma_voom_results_6 <- limma_voom_results_6 %>%
-  select(rna, P.Value, adj.P.Val, logFC, rna_species, pipeline, comparison, diff_expr_method)
+  select(gene_transcript, dataset, P.Value, adj.P.Val, logFC, pipeline, comparison, diff_expr_method)
 
 # rename adjusted p-value column before join
 limma_voom_results_6 <- limma_voom_results_6 %>%

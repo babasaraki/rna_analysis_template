@@ -534,20 +534,20 @@ deseq_results_1 <- base::lapply(deseq_results_1, function(x) {
   
   x %>%
     base::as.data.frame() %>%
-    tibble::rownames_to_column("rna") 
+    tibble::rownames_to_column("gene_transcript") 
   
 })
 
 # collapse into one dataframe
 deseq_results_1 <- do.call(rbind, deseq_results_1)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 deseq_results_1 <- deseq_results_1 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[1]) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
@@ -568,20 +568,20 @@ deseq_results_2 <- base::lapply(deseq_results_2, function(x) {
   
   x %>%
     base::as.data.frame() %>%
-    tibble::rownames_to_column("rna") 
+    tibble::rownames_to_column("gene_transcript") 
   
 })
 
 # collapse into one dataframe
 deseq_results_2 <- do.call(rbind, deseq_results_2)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 deseq_results_2 <- deseq_results_2 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[2]) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
@@ -602,20 +602,20 @@ deseq_results_3 <- base::lapply(deseq_results_3, function(x) {
   
   x %>%
     base::as.data.frame() %>%
-    tibble::rownames_to_column("rna") 
+    tibble::rownames_to_column("gene_transcript") 
   
 })
 
 # collapse into one dataframe
 deseq_results_3 <- do.call(rbind, deseq_results_3)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 deseq_results_3 <- deseq_results_3 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[3]) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
@@ -636,19 +636,19 @@ deseq_results_4 <- base::lapply(deseq_results_4, function(x) {
   
   x %>%
     base::as.data.frame() %>%
-    tibble::rownames_to_column("rna") 
+    tibble::rownames_to_column("gene_transcript") 
   
 })
 
 # collapse into one dataframe
 deseq_results_4 <- do.call(rbind, deseq_results_4)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 deseq_results_4 <- deseq_results_4 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
   dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
@@ -670,20 +670,20 @@ deseq_results_5 <- base::lapply(deseq_results_5, function(x) {
   
   x %>%
     base::as.data.frame() %>%
-    tibble::rownames_to_column("rna") 
+    tibble::rownames_to_column("gene_transcript") 
   
 })
 
 # collapse into one dataframe
 deseq_results_5 <- do.call(rbind, deseq_results_5)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 deseq_results_5 <- deseq_results_5 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[5]) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
@@ -704,20 +704,20 @@ deseq_results_6 <- base::lapply(deseq_results_6, function(x) {
   
   x %>%
     base::as.data.frame() %>%
-    tibble::rownames_to_column("rna") 
+    tibble::rownames_to_column("gene_transcript") 
   
 })
 
 # collapse into one dataframe
 deseq_results_6 <- do.call(rbind, deseq_results_6)
 
-# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames)
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
 deseq_results_6 <- deseq_results_6 %>%
   tibble::rownames_to_column("source") %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
-  dplyr::mutate(rna_species = gsub("(raw_)|(_excerpt_data)|(_smrnaseq_data)", "", source)) %>%
-  dplyr::mutate(pipeline = gsub("(raw_mirna_)|(raw_pirna_)|(raw_trna_)|(raw_circrna_)|(raw_gencode_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[6]) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[4]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
