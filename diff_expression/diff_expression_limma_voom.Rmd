@@ -69,12 +69,8 @@ Datasets analysed:
 
 ```{r, results = "asis"}
 # print the datasets the user has chosen to analyse for this document
-base::cat(base::paste0(" - mirna smrnaseq: ", config$mirna_smrnaseq, "\n",
-                       " - mirna excerpt: ", config$mirna_excerpt, "\n",
-                       " - pirna excerpt: ", config$pirna_excerpt, "\n",
-                       " - trna excerpt: ", config$trna_excerpt, "\n",
-                       " - circrna excerpt: ", config$circrna_excerpt, "\n",
-                       " - gencode excerpt: ", config$gencode_excerpt, "\n"))
+base::cat(base::paste0(" - transcript rnaseq: ", config$transcript_rnaseq, "\n",
+                       " - gene rnaseq: ", config$gene_rnaseq, "\n"))
 ```
 
 ```{r, results = "hide"}
