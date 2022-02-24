@@ -60,6 +60,10 @@ metadata <- utils::read.csv(file.path(config$metadata))
 diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/all_diff_expr_results.tsv",
                                        header = TRUE)
 
+# write differential expression results to file
+diff_expr_results %>%
+  utils::write.table(file = "../diff_expression/diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
+
 # define which datasets were actually analysed in the differential expression analysis
 # to be used to flag the difference between "no significantly differentially expressed genes/transcripts found"
 # and "gene/transcript not analysed in differential expression analysis
