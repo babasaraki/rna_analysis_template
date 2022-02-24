@@ -57,7 +57,7 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 metadata <- utils::read.csv(file.path(config$metadata))
 
 # read in differential expression results
-diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv",
+diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/all_diff_expr_results.tsv",
                                        header = TRUE)
 
 # define which datasets were actually analysed in the differential expression analysis
