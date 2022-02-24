@@ -535,7 +535,7 @@ limma_voom_results_1 <- limma_voom_results_1 %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
   dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
   dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 
@@ -576,7 +576,7 @@ limma_voom_results_2 <- limma_voom_results_2 %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
   dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
   dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[2]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 
@@ -617,7 +617,7 @@ limma_voom_results_3 <- limma_voom_results_3 %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
   dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
   dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[3]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 
@@ -699,7 +699,7 @@ limma_voom_results_5 <- limma_voom_results_5 %>%
   dplyr::mutate(source = gsub("_limmavoom_efit.*", "", source)) %>%
   dplyr::mutate(dataset = gsub("(_rnaseq)", "", source)) %>%
   dplyr::mutate(pipeline = gsub("(gene_)|(transcript_)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[5]) %>%
   dplyr::mutate(diff_expr_method = "limma/voom") %>%
   select(-source)
 

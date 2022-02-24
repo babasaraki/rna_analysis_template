@@ -547,7 +547,7 @@ deseq_results_1 <- deseq_results_1 %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
   dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[1]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
@@ -581,7 +581,7 @@ deseq_results_2 <- deseq_results_2 %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
   dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[2]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
@@ -615,7 +615,7 @@ deseq_results_3 <- deseq_results_3 %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
   dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[3]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
@@ -683,7 +683,7 @@ deseq_results_5 <- deseq_results_5 %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
   dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[5]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
@@ -717,7 +717,7 @@ deseq_results_6 <- deseq_results_6 %>%
   dplyr::mutate(source = gsub("\\..*", "", source)) %>%
   dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
   dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
-  dplyr::mutate(comparison = config$contrasts[4]) %>%
+  dplyr::mutate(comparison = config$contrasts[6]) %>%
   dplyr::mutate(diff_expr_method = "DESeq2") %>%
   select(-source)
 
