@@ -25,7 +25,9 @@ The full analysis has been documented so others can take a "deep dive" into the 
   
 ## Differential expression
 
-- [Differential expression](./example_webpage/diff_expression.html)
+- [Differential expression (limma/voom)](./example_webpage/diff_expression_limma_voom.html)
+- [Differential expression (deseq2)](./example_webpage/diff_expression_deseq.html)
+- [Differential expression - all results](./example_webpage/diff_expression_both.html)
 
 ## Heatmaps
 
