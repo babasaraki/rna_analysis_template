@@ -466,7 +466,7 @@ base::cat("### gene's (rnaseq)")
 gene_rnaseq_limmavoom_v <- limma::voom(dge_gene_rnaseq_filtered,  model_matrix$raw_gene_rnaseq_data, plot=TRUE)
 ```
 
-### Residual variances {.tabset .tabset-fade}
+## Residual variances {.tabset .tabset-fade}
 
 An adapted version of the [plotSA](http://rstudio.esr.cri.nz:8787/s/dec5c0fe7569e683b7632/help/library/limma/html/plotSA.html) function was used to create this plot (made interactive and included individual gene/transcript information for each data point), which can be used to check the mean-variance relationship of the expression data, after fitting a linear model.
 
