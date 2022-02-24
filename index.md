@@ -46,13 +46,12 @@ The full analysis has been documented so others can take a "deep dive" into the 
 
 **Outline where the project is located on which machine/server/cluster**
 
-Analysis located at `/my_project/smncrna_analysis_template/` on ESR's production network
+Analysis located at `/my_project/rna_analysis_template/` on ESR's production network
 
 **Link your analysis documentation here**
 
 - [setup.md](./setup.md)
-- [running_excerpt_pipeline.md](./excerpt_pipeline_run/running_excerpt_pipeline.md)
-- [running_smrnaseq_pipeline.md](./smrnaseq_pipeline_run/running_smrnaseq_pipeline.md)
+- [running_rnaseq_pipeline.md](./rnaseq_pipeline_run/running_rnaseq_pipeline.md)
 - [master.Rmd](./master.Rmd)
 
 ## Extra
