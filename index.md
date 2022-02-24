@@ -44,4 +44,19 @@ The full analysis has been documented so others can take a "deep dive" into the 
 
 ## Analysis workflow for reproducing this analysis
 
+**Outline where the project is located on which machine/server/cluster**
+
+Analysis located at `/my_project/smncrna_analysis_template/` on ESR's production network
+
+**Link your analysis documentation here**
+
+- [setup.md](./setup.md)
+- [running_excerpt_pipeline.md](./excerpt_pipeline_run/running_excerpt_pipeline.md)
+- [running_smrnaseq_pipeline.md](./smrnaseq_pipeline_run/running_smrnaseq_pipeline.md)
 - [master.Rmd](./master.Rmd)
+
+## Extra
+
+**Provide link to your github repository with all your analyses**
+
+*Find more in the [github repository](https://github.com/leahkemp/my_project)*
