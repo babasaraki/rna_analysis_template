@@ -1,0 +1,284 @@
+---
+title: "Sanity check config/metadata"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
+
+```{r setup, include=FALSE}
+# setup default chunk settings
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+```{r}
+# load libraries
+library(dplyr)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(file.path(config$metadata))
+
+# create empty lists to put all the results of the issues to later return to user
+issues_config <- base::list()
+issues_metadata <- base::list()
+```
+
+## Check config file
+
+```{r}
+# check for missing values
+missing_values_in_config <- base::lapply(config, is.null)
+
+# get the values in the list (corresponding to values in the config file) that are missing
+missing_values_in_config <- base::which(base::unlist(missing_values_in_config))
+
+# if there is a missing value in the config file, create a message to append to my list of issues
+if (base::length(missing_values_in_config > 0)) {
+  
+  issues_config <- c(issues_config, base::paste0("The following values are missing in the configuaration file: '", base::names(missing_values_in_config)))
+  
+}
+
+# check the values that should be read into R as TRUE/FALSE (logical) have been entered correctly in the config file
+# if they haven't been entered correctly, create a message to append to my list of issues
+if (base::is.logical(config$transcript_rnaseq) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("'transcript_rnaseq' is incorrectly formatted in the configuaration file. Value needs to be logical, either TRUE or FALSE (and not surrounded in quotation marks)."))
+  
+}
+
+if (base::is.logical(config$gene_rnaseq) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("'gene_rnaseq' is incorrectly formatted in the configuaration file. Value needs to be logical, either TRUE or FALSE (and not surrounded in quotation marks)."))
+  
+}
+
+# check the values that should be read into R as integers have been entered correctly in the config file
+# if they haven't been entered correctly, create a message to append to my list of issues
+if (base::is.integer(config$min_count) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("'min_count' is incorrectly formatted in the configuaration file. Value needs to be an integer (and not surrounded in quotation marks)."))
+  
+}
+
+if (base::is.integer(config$min_total_count) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("'min_total_count' is incorrectly formatted in the configuaration file. Value needs to be an integer (and not surrounded in quotation marks)."))
+  
+}
+
+# check the values that should be read into R as characters have been entered correctly in the config file
+# if they haven't been entered correctly, create a message to append to my list of issues
+if (base::is.character(config$template_dir) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("'template_dir' is incorrectly formatted in the configuaration file. Value needs to be a character string (either surrounded in or not surrounded in quotation marks)."))
+  
+}
+
+if (base::is.character(config$metadata_path) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("'metadata_path' is incorrectly formatted in the configuaration file. Value needs to be a character string (either surrounded in or not surrounded in quotation marks)."))
+  
+}
+
+if (base::is.character(config$contrasts) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("'contrasts' is incorrectly formatted in the configuaration file. Value needs to be a character string (either surrounded in or not surrounded in quotation marks)."))
+  
+}
+
+# check the file paths the user have passed exists
+if (file.exists(config$fastq_dir) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("Directory passed to 'fastq_dir' in the configuration file doesn't exist."))
+  
+}
+
+if (file.exists(config$template_dir) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("Directory passed to 'template_dir' in the configuration file doesn't exist."))
+  
+}
+
+if (file.exists(config$metadata_path) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("File path passed to 'metadata_path' in the configuration file doesn't exist."))
+  
+}
+
+if (file.exists(config$rnaseq_results_dir) == FALSE) {
+  
+  issues_config <- c(issues_config, base::paste0("Directory passed to 'rnaseq_results_dir' in the configuration file doesn't exist."))
+  
+}
+
+# check the files the template will be grabbing exist
+if (base::file.exists(base::file.path(config$rnaseq_results_dir, "star_salmon/salmon.merged.transcript_counts.tsv")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the rnaseq transcript count dataset to be analysed based on the directory passed to 'rnaseq_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$rnaseq_results_dir, "star_salmon/salmon.merged.transcript_counts.tsv")))
+  
+}
+
+if (base::file.exists(base::file.path(config$rnaseq_results_dir, "star_salmon/salmon.merged.gene_counts_length_scaled.tsv")) == "FALSE") {
+  
+  issues_config <- c(issues_config, base::paste0("Unable to find the rnaseq gene count dataset to be analysed based on the directory passed to 'rnaseq_results_dir' in the configuration file. The following path was passed: ",
+                                                 base::file.path(config$rnaseq_results_dir, "star_salmon/salmon.merged.gene_counts_length_scaled.tsv")))
+  
+}
+```
+
+```{r}
+# return the list of issues identified
+# send message when no issues found or list of issues identified
+if (base::length(issues_config) == 0) {
+  
+  message_for_user <- "No issues identified in the input configuration file! Woohoo!"
+  
+}
+
+if (base::length(issues_config) > 0) {
+  
+  message_for_user <- issues_config
+  
+}
+```
+
+```{r, results = "asis"}
+# return message to user
+base::cat(base::paste0(message_for_user, sep = "\n\n"))
+```
+
+## Check metadata file
+
+```{r}
+# check the required column (sample) is present in the metadata
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & ("sample" %in% base::colnames(metadata)) == FALSE) {
+  
+  issues_metadata <- c(issues_metadata, base::paste0("No column named 'sample' in the metadata file at ",
+                                                     config$metadata_path,
+                                                     ". This column is required and must be all lower case."))
+  
+}
+
+# check the required column (treatment) is present in the metadata
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & ("treatment" %in% base::colnames(metadata)) == FALSE) {
+  
+  issues_metadata <- c(issues_metadata, base::paste0("No column named 'treatment' in the metadata file at ",
+                                                     config$metadata_path,
+                                                     ". This column is required and must be all lower case."))
+  
+}
+
+# check that all values of the 'sample' column in the metadata are unique
+# ie. each row in the metadata represents a unique sample
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (length(unique(metadata$sample)) != length(metadata$sample))) {
+  
+  issues_metadata <- c(issues_metadata, base::paste0("There appears to be duplicate samples in the 'sample' column in the metadata file at  ",
+                                                     config$metadata_path,
+                                                     ". Please ensure all sample ID's (values in the 'sample' column) are unique."))
+  
+}
+
+# get the names of the fastq files in the fastq directory
+fastq_file_names <- base::list.files(config$fastq_dir)
+
+# strip .fastq.gz suffix to get just sample names
+fastq_file_sample_names <- base::lapply(fastq_file_names, function(x)
+  
+  base::gsub(".fastq.gz", "", x)
+  
+)
+
+# check the sample names of the fastq files correspond to the sample names in the metadata file
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (any(fastq_file_sample_names %in% metadata$sample == FALSE) == TRUE)) {
+  
+  issues_metadata <- c(issues_metadata, base::paste0("Not all fastq file names in the fastq directory at ",
+                                                     config$fastq_dir,
+                                                     " correspond to the samples defined in the 'sample' column of the metadata file at ",
+                                                     config$metadata_path,
+                                                     ". Please ensure every sample in the fastq directory is defined in the metadata file."))
+  
+}
+
+if ((file.exists(config$metadata_path) == TRUE) & (any(metadata$sample %in% fastq_file_sample_names == FALSE) == TRUE)) {
+  
+  issues_metadata <- c(issues_metadata, base::paste0("Not all the samples defined in the 'sample' column of the metadata file at ",
+                                                     config$metadata_path,
+                                                     " correspond to the fastq file names in the fastq directory at ",
+                                                     config$fastq_dir,
+                                                     ". Please ensure every sample defined in the metadata file correspond to the filenames of the files in the fastq directory."))
+  
+}
+
+# check there are two or more samples in each treatment group (required for differential expression analysis)
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+
+# get the number of samples per treatment group (based on the metadata file)
+samples_per_treatment <- metadata %>%
+  dplyr::group_by(treatment) %>%
+  dplyr::summarise(n_samples = n()) %>%
+  dplyr::pull(n_samples)
+
+# append message if requirement not satisfied
+if ((file.exists(config$metadata_path) == TRUE) & (all(samples_per_treatment > 1) == FALSE)) {
+  
+  issues_metadata <- c(issues_metadata, base::paste0("There appears to be treatment groups with less than 2 samples per treatment (no replicates) based on the metadata file at ",
+                                                     config$metadata_path,
+                                                     " . Please ensure that any treatment group used in the differential expression analysis (passed to contrasts in the configuration file) contains 2 or more samples."))
+}
+```
+
+```{r}
+# return the list of issues identified
+# send message when no issues found or list of issues identified
+if (base::length(issues_metadata) == 0) {
+  
+  message_for_user <- "No issues identified in the input metadata file! Woohoo!"
+  
+}
+
+if (base::length(issues_metadata) > 0) {
+  
+  message_for_user <- issues_metadata
+  
+}
+```
+
+```{r, results = "asis"}
+# return message to user
+base::cat(base::paste0(message_for_user, sep = "\n\n"))
+```
+
+```{r}
+# clean up
+rm(list = ls())
+```

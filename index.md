@@ -2,7 +2,7 @@
 
 ## Overview of the analysis
 
-The RNA-seq data was analysed with [rnaseq version 3.5](https://github.com/nf-core/rnaseq/tree/3.5). The outputs of these pipelines were then analysed with the [rna_analysis_template 1.0.0](https://github.com/leahkemp/rna_analysis_template/releases/tag/1.0.0). The following treatment groups were compared for analysis:
+The RNA-seq data was analysed with [rnaseq version 3.5](https://github.com/nf-core/rnaseq/tree/3.5). The outputs of these pipelines were then analysed with the [rna_analysis_template 1.0.0](https://github.com/leahkemp/rna_analysis_template/tree/1.0.0). The following treatment groups were compared for analysis:
 
 - treatment1 - treatment2
 
@@ -25,7 +25,9 @@ The full analysis has been documented so others can take a "deep dive" into the 
   
 ## Differential expression
 
-- [Differential expression](./example_webpage/diff_expression.html)
+- [Differential expression (limma/voom)](./example_webpage/diff_expression_limma_voom.html)
+- [Differential expression (deseq2)](./example_webpage/diff_expression_deseq.html)
+- [Differential expression - all results](./example_webpage/diff_expression_both.html)
 
 ## Heatmaps
 
@@ -42,4 +44,19 @@ The full analysis has been documented so others can take a "deep dive" into the 
 
 ## Analysis workflow for reproducing this analysis
 
+**Outline where the project is located on which machine/server/cluster**
+
+Analysis located at `/my_project/smncrna_analysis_template/` on ESR's production network
+
+**Link your analysis documentation here**
+
+- [setup.md](./setup.md)
+- [running_excerpt_pipeline.md](./excerpt_pipeline_run/running_excerpt_pipeline.md)
+- [running_smrnaseq_pipeline.md](./smrnaseq_pipeline_run/running_smrnaseq_pipeline.md)
 - [master.Rmd](./master.Rmd)
+
+## Extra
+
+**Provide link to your github repository with all your analyses**
+
+*Find more in the [github repository](https://github.com/leahkemp/my_project)*

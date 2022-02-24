@@ -20,17 +20,33 @@ Restore the [renv](https://rstudio.github.io/renv/) to install all of the packag
 renv::restore()
 ```
 
+## Sanity check config/metadata
+
+*This will check for some common issues in the input configuration/metadata files. Please address any issues flagged in the output html file (./sanity_check_inputs/sanity_check_config_metadata.html) before continuing.*
+
+```{r}
+rmarkdown::render("./sanity_check_inputs/sanity_check_config_metadata.Rmd")
+```
+
+## Sanity check raw count data
+
+*This will check for some common issues in the input raw count data. Please address any issues flagged in the output html file (./sanity_check_inputs/sanity_check_raw_counts.html) before continuing.*
+
+```{r}
+rmarkdown::render("./sanity_check_inputs/sanity_check_raw_counts.Rmd")
+```
+
 ## Prepare count data
 
 *This will output a csv file with raw, counts per million and log counts per million for all samples and RNA species (./prepare_counts/counts.csv)*
 
 ```{r}
-base::source("./prepare_counts/prepare_counts.R")
+rmarkdown::render("./prepare_counts/prepare_counts.Rmd")
 ```
 
 ## MDS plots
 
-*This will output an interactive html document exploring the multidimentional scaling (MDS) of the RNA's (./mds/mds.html) as well as csv files with raw mds data (./mds/mds_results/)*
+*This will output an interactive html document exploring the multidimensional scaling (MDS) of the RNA's (./mds/mds.html) as well as csv files with raw mds data (./mds/mds_results/)*
 
 ```{r}
 rmarkdown::render("./mds/mds.Rmd")
@@ -50,10 +66,12 @@ Run the RShiny app locally or deploy to a shinyapps IO account (which will allow
 
 ## Differential expression analysis
 
-*This will output an interactive html document exploring the differential expression analysis of the RNA's (./diff_expression/diff_expression.html) as well as csv files with all raw differential expression results data for both differential expression methods (./diff_expression/diff_expr_results/diff_expr_results.tsv) as well as all raw differential expression results data for limma/voom and deseq2 differential expression results separately (./diff_expression/diff_expr_results/limma_voom_diff_expr_results.tsv, ./diff_expression/diff_expr_results/deseq_diff_expr_results.tsv respectively). Also output are significant genes/transcripts that meet the user specified log fold change cutoff and have an adjusted p-value smaller than 0.01, 0.05 and 0.1 (./diff_expression/diff_expr_results/sig_diff_expr_results_1.tsv, ./diff_expression/diff_expr_results/sig_diff_expr_results_5.tsv, ./diff_expression/diff_expr_results/sig_diff_expr_results_10.tsv respectively)*
+*This will output an interactive html document exploring the differential expression analysis of the RNA's (./diff_expression/diff_expression.html) as well as csv files with all raw differential expression results data for both differential expression methods (./diff_expression/diff_expr_results/all_diff_expr_results.tsv) as well as all raw differential expression results data for limma/voom and deseq2 differential expression results separately (./diff_expression/diff_expr_results/all_limma_voom_diff_expr_results.tsv, ./diff_expression/diff_expr_results/all_deseq_diff_expr_results.tsv respectively). Also output are significant RNA's that meet the user specified log fold change cutoff and have an adjusted p-value smaller than 0.01, 0.05 and 0.1 (./diff_expression/diff_expr_results/sig_diff_expr_results_1.tsv, ./diff_expression/diff_expr_results/sig_diff_expr_results_5.tsv, ./diff_expression/diff_expr_results/sig_diff_expr_results_10.tsv respectively)*
 
 ```{r}
-rmarkdown::render("./diff_expression/diff_expression.Rmd")
+rmarkdown::render("./diff_expression/diff_expression_limma_voom.Rmd")
+rmarkdown::render("./diff_expression/diff_expression_deseq.Rmd")
+rmarkdown::render("./diff_expression/diff_expression_both.Rmd")
 ```
 
 ## Heatmaps

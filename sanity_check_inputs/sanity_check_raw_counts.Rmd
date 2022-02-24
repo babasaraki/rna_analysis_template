@@ -1,0 +1,280 @@
+---
+title: "Sanity check raw counts"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
+
+```{r setup, include=FALSE}
+# setup default chunk settings
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+```{r}
+# load libraries
+library(dplyr)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(file.path(config$metadata))
+
+# create empty list to put all the results of the issues to later return to user
+issues_raw_counts <- base::list()
+```
+
+## Check raw count data
+
+```{r, eval = config$transcript_rnaseq}
+# load the count dataset
+raw_transcript_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_dir,
+                                                                "star_salmon/salmon.merged.transcript_counts.tsv"),
+                                                header = TRUE,
+                                                stringsAsFactors = FALSE,
+                                                check.names = FALSE) %>%
+  # rename columns
+  dplyr::rename(gene_transcript = tx) %>%
+  # remove columns before normalization step
+  dplyr::select(-gene_id) %>%
+  # convert column to rowname so the data can be normalised later
+  tibble::remove_rownames() %>%
+  tibble::column_to_rownames(var="gene_transcript")
+
+# remove rows that are all 0 (no counts for that given gene/transcript found in any sample)
+raw_transcript_rnaseq_data <- raw_transcript_rnaseq_data[rowSums(raw_transcript_rnaseq_data[])>0,]
+```
+
+```{r, eval = config$gene_rnaseq}
+# load the count dataset
+raw_gene_rnaseq_data <- utils::read.table(base::file.path(config$rnaseq_results_dir,
+                                                          "star_salmon/salmon.merged.gene_counts_length_scaled.tsv"),
+                                          header = TRUE,
+                                          stringsAsFactors = FALSE,
+                                          check.names = FALSE) %>%
+  # rename columns
+  dplyr::rename(gene_transcript = gene_id) %>%
+  # remove columns before normalization step
+  dplyr::select(-gene_name) %>%
+  # convert column to rowname so the data can be normalised later
+  tibble::remove_rownames() %>%
+  tibble::column_to_rownames(var="gene_transcript")
+
+# remove rows that are all 0 (no counts for that given gene/transcript found in any sample)
+raw_gene_rnaseq_data <- raw_gene_rnaseq_data[rowSums(raw_gene_rnaseq_data[])>0,]
+```
+
+```{r, eval = config$transcript_rnaseq}
+# establish if there are 2 or more rows of data in the count dataset
+transcript_rnaseq_enough_rows <- nrow(raw_transcript_rnaseq_data) >=2
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (transcript_rnaseq_enough_rows == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (transcript's) available after filtering lowly expressed genes to carry out a differential expression analysis of the transcript_rnaseq dataset. Please set 'transcript_rnaseq' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = config$gene_rnaseq}
+# establish if there are 2 or more rows of data in the count dataset
+gene_rnaseq_enough_rows <- nrow(raw_gene_rnaseq_data) >=2
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (gene_rnaseq_enough_rows == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (gene's) to carry out a differential expression analysis of the gene_rnaseq dataset. Please set 'gene_rnaseq' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r}
+# also set any flags to not analyse downstream chunks to false if they aren't created
+if (base::exists("transcript_rnaseq_enough_rows") == FALSE) {
+  transcript_rnaseq_enough_rows <- FALSE
+}
+
+if (base::exists("gene_rnaseq_enough_rows") == FALSE) {
+  gene_rnaseq_enough_rows <- FALSE
+}
+
+# remove any datasets that don't have enough rows of data to continue downstream checks without these datasets erroring out
+if (transcript_rnaseq_enough_rows == FALSE) {
+  base::rm(raw_transcript_rnaseq_data)
+}
+
+if (gene_rnaseq_enough_rows == FALSE) {
+  base::rm(raw_gene_rnaseq_data)
+}
+```
+
+```{r}
+# make a list of all the count datasets in the global environment
+count_datasets <- base::do.call("list", base::mget(base::grep("_data", base::names(.GlobalEnv), value=TRUE)))
+
+# evaluate/setup minimum logFC threshold
+min_logfc <- base::eval(base::parse(text = config$min_lfc))
+
+# specify treatments by creating a string of conditions that match the order of the columns/samples in the count data
+# get the treatments and samples names from the metadata file
+treatments <- metadata %>%
+  dplyr::select(sample, treatment)
+
+# also sort by the sample column (important so it matches the order of the samples count datasets)
+# this is critical for DESeq2 - it assumes they are in the same order
+treatments <- treatments[gtools::mixedorder(base::as.character(treatments$sample)),]
+
+# extract only the conditions/groups and create a list out of it
+ordered_treatments <- treatments %>%
+  dplyr::pull(treatment)
+
+# make sure the samples (columns) in all the datasets are in the same order for specifying the treatments downstream
+# (that depends on the columns being in the correct order)  (loop over all count datasets)
+count_datasets <- base::lapply(count_datasets, function(x) {
+  
+  x[ , gtools::mixedsort(names(x))]
+  
+})
+
+# convert datasets to matrices (loop over all count datasets)
+# also round read counts to the nearest integer to avoid a downstream error with DESeqDataSetFromMatrix() (see this discussion https://www.biostars.org/p/368158/)
+count_datasets <- base::lapply(count_datasets, function(x) {
+  
+  x %>%
+    base::round() %>%
+    base::as.matrix(sep = "\t", row.names = "gene_transcript_id")
+  
+})
+
+# create DGEList objects for the datasets (loop over all count datasets)
+dge <- base::lapply(count_datasets, function(x) {
+  
+  edgeR::DGEList(counts = x, group = ordered_treatments)
+  
+})
+
+# filter lowly expressed gene/transcript
+keep <- base::lapply(dge, function(x) {
+  
+  edgeR::filterByExpr(x, group=ordered_treatments, min.count = config$min_count, min.total.count = config$min_total_count)
+  
+})
+```
+
+```{r, eval = transcript_rnaseq_enough_rows}
+# apply filtering
+dge_transcript_rnaseq_filtered <- dge$raw_transcript_rnaseq_data[keep$raw_transcript_rnaseq_data,, keep.lib.sizes=FALSE]
+
+# establish if there are 2 or more rows of data in the count dataset
+transcript_rnaseq_enough_rows_after_filtering <- nrow(dge_transcript_rnaseq_filtered$counts) >=2
+```
+
+```{r, eval = gene_rnaseq_enough_rows}
+# apply filtering
+dge_gene_rnaseq_filtered <- dge$raw_gene_rnaseq_data[keep$raw_gene_rnaseq_data,, keep.lib.sizes=FALSE]
+
+# establish if there are 2 or more rows of data in the count dataset
+gene_rnaseq_enough_rows_after_filtering <- nrow(dge_gene_rnaseq_filtered$counts) >=2
+```
+
+```{r, eval = transcript_rnaseq_enough_rows}
+# check the sample names in the raw count data correspond to the sample names in the metadata file
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (any(base::colnames(raw_transcript_rnaseq_data) %in% metadata$sample == FALSE) == TRUE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("Not all samples in the raw transcript rnaseq count data at ",
+                                                         base::file.path(config$smrnaseq_results_dir, "star_salmon/salmon.merged.transcript_counts.tsv"),
+                                                         " correspond to the samples defined in the 'sample' column of the metadata file at ",
+                                                         config$metadata_path,
+                                                         ". Please ensure every sample in the raw miRNA smrnaseq count data is defined in the metadata file."))
+  
+}
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (transcript_rnaseq_enough_rows_after_filtering == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (transcript rnaseq) available after filtering lowly expressed genes to carry out a differential expression analysis of the transcript_rnaseq dataset. Please set 'transcript_rnaseq' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r, eval = gene_rnaseq_enough_rows}
+# check the sample names in the raw count data correspond to the sample names in the metadata file
+# (don't print message if the metadata file path isn't correct since this error is already accounted for above)
+if ((file.exists(config$metadata_path) == TRUE) & (any(base::colnames(raw_gene_rnaseq_data) %in% metadata$sample == FALSE) == TRUE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("Not all samples in the raw gene rnaseq count data at ",
+                                                         base::file.path(config$excerpt_results_dir, "star_salmon/salmon.merged.gene_counts_length_scaled.tsv"),
+                                                         " correspond to the samples defined in the 'sample' column of the metadata file at ",
+                                                         config$metadata_path,
+                                                         ". Please ensure every sample in the raw gene rnaseq count data is defined in the metadata file."))
+  
+}
+
+# check that there is more than one row of data in the count matrices after filtering
+# (this is required by the differential expression analysis)
+if ((file.exists(config$metadata_path) == TRUE) & (gene_rnaseq_enough_rows_after_filtering == FALSE)) {
+  
+  issues_raw_counts <- c(issues_raw_counts, base::paste0("There are not enough rows of data (gene's) available after filtering lowly expressed RNA's to carry out a differential expression analysis of the gene_rnaseq dataset. Please set 'gene_rnaseq' in the metadata file at ",
+                                                         config$metadata_path,
+                                                         " to FALSE to not analyse this dataset."))
+  
+}
+```
+
+```{r}
+# return the list of issues identified
+# send message when no issues found or list of issues identified
+if (base::length(issues_raw_counts) == 0) {
+  
+  message_for_user <- "No issues identified in the input raw count files! Woohoo!"
+  
+}
+
+if (base::length(issues_raw_counts) >= 1) {
+  
+  message_for_user <- issues_raw_counts
+  
+}
+```
+
+```{r, results = "asis"}
+# return message to user
+base::cat(base::paste0(message_for_user), sep = "\n\n")
+```
+
+```{r}
+# clean up
+rm(list = ls())
+```

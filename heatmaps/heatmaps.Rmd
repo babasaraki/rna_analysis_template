@@ -57,28 +57,12 @@ config <- yaml::yaml.load_file("../config/config.yaml")
 metadata <- utils::read.csv(file.path(config$metadata))
 
 # read in differential expression results
-diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/diff_expr_results.tsv",
+diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/all_diff_expr_results.tsv",
                                        header = TRUE)
 
-# load all the count datasets (premade rds objects)
-raw_transcript_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_transcript_rnaseq_counts.rds"))
-raw_gene_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/raw_gene_rnaseq_counts.rds"))
-
-lcpm_transcript_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_transcript_rnaseq_counts.rds"))
-lcpm_gene_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_gene_rnaseq_counts.rds"))
-
-# create a vector defining the count datasets to analyse (that are set to TRUE) based on the yaml user configuration file
-to_analyse <- config[c("transcript_rnaseq",
-                       "gene_rnaseq")] %>%
-  base::as.data.frame() %>%
-  base::t() %>%
-  base::as.data.frame() %>%
-  tibble::rownames_to_column("dataset") %>%
-  dplyr::rename("analyse" = "V1") %>%
-  tidyr::separate(dataset, c("dataset", "pipeline")) %>%
-  dplyr::filter(analyse == TRUE) %>%
-  dplyr::mutate(dataset_name = base::paste0(dataset, "_", pipeline)) %>%
-  dplyr::pull(dataset_name)
+# write differential expression results to file
+diff_expr_results %>%
+  utils::write.table(file = "../diff_expression/diff_expr_results/diff_expr_results.tsv", row.names=FALSE, sep="\t")
 
 # define which datasets were actually analysed in the differential expression analysis
 # to be used to flag the difference between "no significantly differentially expressed genes/transcripts found"
@@ -87,17 +71,6 @@ diff_expr_analysed <- diff_expr_results %>%
   dplyr::mutate(dataset = paste(dataset, pipeline, sep = "_"))
 
 diff_expr_analysed <- unique(diff_expr_analysed$dataset)
-
-# set up a vector of all the possible datasets to analyse
-raw_datasets <- base::list(transcript_rnaseq = raw_transcript_rnaseq_data,
-                           gene_rnaseq = raw_gene_rnaseq_data)
-
-lcpm_datasets <- base::list(transcript_rnaseq = lcpm_transcript_rnaseq_data,
-                            gene_rnaseq = lcpm_gene_rnaseq_data)
-
-# filter all possible datasets by the datasets the user has specified to analyse
-raw_datasets <- raw_datasets[to_analyse]
-lcpm_datasets <- lcpm_datasets[to_analyse]
 
 # get a list of genes/transcripts that were found to be significantly differentially expressed by at least one differential expression method
 sig_gene_transcripts <- diff_expr_results %>%
@@ -136,7 +109,7 @@ if(too_many_genes == TRUE) {
   
   sig_genes <- sig_genes %>%
     # get the RNA names
-    dplyr::pull(rna) %>%
+    dplyr::pull(gene_transcript) %>%
     # get the unique genes (since there can be multiple rows for a given gene)
     base::unique()
   
@@ -161,7 +134,7 @@ if(too_many_transcripts == TRUE) {
   
   sig_transcripts <- sig_transcripts %>%
     # get the RNA names
-    dplyr::pull(rna) %>%
+    dplyr::pull(gene_transcript) %>%
     # get the unique transcripts (since there can be multiple rows for a given transcript)
     base::unique()
   
@@ -169,6 +142,21 @@ if(too_many_transcripts == TRUE) {
 
 # merge genes/transcripts list back together
 sig_gene_transcripts <- c(sig_genes, sig_transcripts)
+```
+
+```{r, eval = config$transcript_rnaseq}
+# load count dataset (premade rds objects)
+lcpm_transcript_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_transcript_rnaseq_counts.rds"))
+```
+
+```{r, eval = config$gene_rnaseq}
+# load count dataset (premade rds objects)
+lcpm_gene_rnaseq_data <- base::readRDS(base::file.path(config$template_dir, "prepare_counts/rds_objects/lcpm_gene_rnaseq_counts.rds"))
+```
+
+```{r}
+# make a list of all the count datasets in the global environment
+lcpm_datasets <- base::do.call("list", base::mget(base::grep("lcpm_", base::names(.GlobalEnv), value=TRUE)))
 
 # get the significantly differentially expressed genes/transcripts (loop over all count datasets)
 log_counts_per_million <- base::lapply(lcpm_datasets, function(x)
@@ -206,11 +194,11 @@ all_widths <- metadata %>%
   dplyr::pull(n_samples)
 
 # set heatmap figure heights to automatically scale to how many rows are present in the data
-fig_height_transcript_rnaseq <- base::nrow(log_counts_per_million$transcript_rnaseq) / 6
-fig_height_gene_rnaseq <- base::nrow(log_counts_per_million$gene_rnaseq) / 6
+fig_height_transcript_rnaseq <- base::nrow(log_counts_per_million$lcpm_transcript_rnaseq_data) / 5
+fig_height_gene_rnaseq <- base::nrow(log_counts_per_million$lcpm_gene_rnaseq_data) / 5
 
-fig_height_transcript_rnaseq_free <- base::nrow(log_counts_per_million$transcript_rnaseq) / 4
-fig_height_gene_rnaseq_free <- base::nrow(log_counts_per_million$gene_rnaseq) / 4
+fig_height_transcript_rnaseq_free <- base::nrow(log_counts_per_million$lcpm_transcript_rnaseq_data) / 4
+fig_height_gene_rnaseq_free <- base::nrow(log_counts_per_million$lcpm_gene_rnaseq_data) / 4
 
 # need to set the figure height to NOT ZERO when the figure height ends up being less than 1 so rmarkdown doesn't error out on knitting
 fig_height_transcript_rnaseq[fig_height_transcript_rnaseq <1 ] <- 1
@@ -286,7 +274,7 @@ base::cat(base::paste0("Too many significant transcripts to plot. Plotting only 
 
 ```{r, eval = config$transcript_rnaseq, fig.height = fig_height_transcript_rnaseq, out.width = "100%"}
 # extract datasets
-lcpm_transcript_rnaseq <- log_counts_per_million$transcript_rnaseq
+lcpm_transcript_rnaseq <- log_counts_per_million$lcpm_transcript_rnaseq_data
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -390,7 +378,7 @@ base::cat(base::paste0("Too many significant genes to plot. Plotting only 300 ge
 
 ```{r, eval = config$gene_rnaseq, fig.height = fig_height_gene_rnaseq, out.width = "100%"}
 # extract datasets
-lcpm_gene_rnaseq <- log_counts_per_million$gene_rnaseq
+lcpm_gene_rnaseq <- log_counts_per_million$lcpm_gene_rnaseq_data
 
 # setup for heatmap plotting
 # get the number of unique treatments
@@ -496,7 +484,7 @@ base::cat(base::paste0("Too many significant transcripts to plot. Plotting only 
 
 ```{r, eval = config$transcript_rnaseq, fig.height = fig_height_transcript_rnaseq_free, out.width = "100%"}
 # extract datasets
-lcpm_transcript_rnaseq <- log_counts_per_million$transcript_rnaseq
+lcpm_transcript_rnaseq <- log_counts_per_million$lcpm_transcript_rnaseq_data
 
 # get the max gene/transcript count in all datasets (over all transcripts) to scale the colour scale to
 maximum_gene_transcript_count <- base::max(c(lcpm_transcript_rnaseq))
@@ -561,7 +549,7 @@ base::cat(base::paste0("Too many significant genes to plot. Plotting only 300 ge
 
 ```{r, eval = config$gene_rnaseq, fig.height = fig_height_gene_rnaseq_free, out.width = "100%"}
 # extract datasets
-lcpm_gene_rnaseq <- log_counts_per_million$gene_rnaseq
+lcpm_gene_rnaseq <- log_counts_per_million$lcpm_gene_rnaseq_data
 
 # get the max gene/transcript count in all datasets (over all genes) to scale the colour scale to
 maximum_gene_transcript_count <- base::max(c(lcpm_gene_rnaseq))
