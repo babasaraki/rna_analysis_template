@@ -77,7 +77,7 @@ base::cat(base::paste0(" - transcript rnaseq: ", config$transcript_rnaseq, "\n",
 # create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
 to_eval_chunk <- config[c("transcript_rnaseq",
                           "gene_rnaseq")] %>%
-  rep(times = 6)
+  rep(times = 10)
 
 names(to_eval_chunk)[1:2] <- paste(names(to_eval_chunk)[1:2], "1", sep = "_")
 names(to_eval_chunk)[3:4] <- paste(names(to_eval_chunk)[3:4], "2", sep = "_")
@@ -85,20 +85,32 @@ names(to_eval_chunk)[5:6] <- paste(names(to_eval_chunk)[5:6], "3", sep = "_")
 names(to_eval_chunk)[7:8] <- paste(names(to_eval_chunk)[7:8], "4", sep = "_")
 names(to_eval_chunk)[9:10] <- paste(names(to_eval_chunk)[9:10], "5", sep = "_")
 names(to_eval_chunk)[11:12] <- paste(names(to_eval_chunk)[11:12], "6", sep = "_")
+names(to_eval_chunk)[13:14] <- paste(names(to_eval_chunk)[13:14], "7", sep = "_")
+names(to_eval_chunk)[15:16] <- paste(names(to_eval_chunk)[15:16], "8", sep = "_")
+names(to_eval_chunk)[17:18] <- paste(names(to_eval_chunk)[17:18], "9", sep = "_")
+names(to_eval_chunk)[19:20] <- paste(names(to_eval_chunk)[19:20], "10", sep = "_")
 
 n_contrasts <- base::length(config$contrasts)
 
 to_eval_chunk <- if(n_contrasts == 1) {
-  replace(to_eval_chunk, 3:12, FALSE)
+  replace(to_eval_chunk, 3:20, FALSE)
 } else if(n_contrasts == 2) {
-  replace(to_eval_chunk, 5:12, FALSE)
+  replace(to_eval_chunk, 5:20, FALSE)
 } else if(n_contrasts == 3) {
-  replace(to_eval_chunk, 7:12, FALSE)
+  replace(to_eval_chunk, 7:20, FALSE)
 } else if(n_contrasts == 4) {
-  replace(to_eval_chunk, 9:12, FALSE)
+  replace(to_eval_chunk, 9:20, FALSE)
 } else if(n_contrasts == 5) {
-  replace(to_eval_chunk, 11:12, FALSE)
+  replace(to_eval_chunk, 11:20, FALSE)
 } else if(n_contrasts == 6) {
+  replace(to_eval_chunk, 13:20, FALSE)
+} else if(n_contrasts == 7) {
+  replace(to_eval_chunk, 15:20, FALSE)
+} else if(n_contrasts == 8) {
+  replace(to_eval_chunk, 17:20, FALSE)
+} else if(n_contrasts == 9) {
+  replace(to_eval_chunk, 19:20, FALSE)
+} else if(n_contrasts == 10) {
   to_eval_chunk
 }
 
@@ -108,19 +120,31 @@ contrasts_chunk_eval <- list(contrast_1 = TRUE,
                              contrast_3 = TRUE,
                              contrast_4 = TRUE,
                              contrast_5 = TRUE,
-                             contrast_6 = TRUE)
+                             contrast_6 = TRUE,
+                             contrast_7 = TRUE,
+                             contrast_8 = TRUE,
+                             contrast_9 = TRUE,
+                             contrast_10 = TRUE)
 
 contrasts_chunk_eval <- if(n_contrasts == 1) {
-  replace(contrasts_chunk_eval, 2:6, FALSE)
+  replace(contrasts_chunk_eval, 2:10, FALSE)
 } else if(n_contrasts == 2) {
-  replace(contrasts_chunk_eval, 3:6, FALSE)
+  replace(contrasts_chunk_eval, 3:10, FALSE)
 } else if(n_contrasts == 3) {
-  replace(contrasts_chunk_eval, 4:6, FALSE)
+  replace(contrasts_chunk_eval, 4:10, FALSE)
 } else if(n_contrasts == 4) {
-  replace(contrasts_chunk_eval, 5:6, FALSE)
+  replace(contrasts_chunk_eval, 5:10, FALSE)
 } else if(n_contrasts == 5) {
-  replace(contrasts_chunk_eval, 6, FALSE)
+  replace(contrasts_chunk_eval, 6:10, FALSE)
 } else if(n_contrasts == 6) {
+  replace(contrasts_chunk_eval, 7:10, FALSE)
+} else if(n_contrasts == 7) {
+  replace(contrasts_chunk_eval, 8:10, FALSE)
+} else if(n_contrasts == 8) {
+  replace(contrasts_chunk_eval, 9:10, FALSE)
+} else if(n_contrasts == 9) {
+  replace(contrasts_chunk_eval, 10, FALSE)
+} else if(n_contrasts == 10) {
   contrasts_chunk_eval
 }
 
@@ -482,6 +506,58 @@ deseq_results_6 <- base::lapply(deseq, function(x) {
 })
 ```
 
+```{r, eval = contrasts[7]}
+# comparison/contrast 7
+# extract the results of the deseq differential expression analysis (loop over all count datasets)
+deseq_results_7 <- base::lapply(deseq, function(x) {
+  
+  x %>%
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[7]), base::sub(".* - ", "", config$contrasts[7])),
+                    lfcThreshold = min_logfc,
+                    pAdjustMethod = "BH")
+  
+})
+```
+
+```{r, eval = contrasts[8]}
+# comparison/contrast 8
+# extract the results of the deseq differential expression analysis (loop over all count datasets)
+deseq_results_8 <- base::lapply(deseq, function(x) {
+  
+  x %>%
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[8]), base::sub(".* - ", "", config$contrasts[8])),
+                    lfcThreshold = min_logfc,
+                    pAdjustMethod = "BH")
+  
+})
+```
+
+```{r, eval = contrasts[9]}
+# comparison/contrast 9
+# extract the results of the deseq differential expression analysis (loop over all count datasets)
+deseq_results_9 <- base::lapply(deseq, function(x) {
+  
+  x %>%
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[9]), base::sub(".* - ", "", config$contrasts[9])),
+                    lfcThreshold = min_logfc,
+                    pAdjustMethod = "BH")
+  
+})
+```
+
+```{r, eval = contrasts[10]}
+# comparison/contrast 10
+# extract the results of the deseq differential expression analysis (loop over all count datasets)
+deseq_results_10 <- base::lapply(deseq, function(x) {
+  
+  x %>%
+    DESeq2::results(contrast = c("treatment", base::sub(" - .*", "", config$contrasts[10]), base::sub(".* - ", "", config$contrasts[10])),
+                    lfcThreshold = min_logfc,
+                    pAdjustMethod = "BH")
+  
+})
+```
+
 ## Count outlier detection {.tabset .tabset-fade}
 
 DESeq2 relies on the negative binomial distribution to make estimates and perform statistical inference on differences. While the negative binomial is versatile in having a mean and dispersion parameter, extreme counts in individual samples might not fit well to the negative binomial. For this reason, we perform automatic detection of count outliers. We use Cook’s distance, which is a measure of how much the fitted coefficients would change if an individual sample were removed (Cook 1977). For more on the implementation of Cook’s distance see the manual page for the results function. Below we plot the maximum value of Cook’s distance for each row over the rank of the test statistic to justify its use as a filtering criterion (based on [DESeq2 vignette](https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html#count-outlier-detection)).
@@ -728,6 +804,142 @@ deseq_results_6 %>%
   utils::write.table(file = "./diff_expr_results/deseq_diff_expr_results_comparison_6.tsv", row.names=FALSE, sep="\t")
 ```
 
+```{r, eval = contrasts[7]}
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
+deseq_results_7 <- base::lapply(deseq_results_7, function(x) {
+  
+  x %>%
+    base::as.data.frame() %>%
+    tibble::rownames_to_column("gene_transcript") 
+  
+})
+
+# collapse into one dataframe
+deseq_results_7 <- do.call(rbind, deseq_results_7)
+
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
+deseq_results_7 <- deseq_results_7 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[7]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# rename columns before join
+deseq_results_7 <- deseq_results_7 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
+
+# write differential expression results to file
+deseq_results_7 %>%
+  utils::write.table(file = "./diff_expr_results/deseq_diff_expr_results_comparison_7.tsv", row.names=FALSE, sep="\t")
+```
+
+```{r, eval = contrasts[8]}
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
+deseq_results_8 <- base::lapply(deseq_results_8, function(x) {
+  
+  x %>%
+    base::as.data.frame() %>%
+    tibble::rownames_to_column("gene_transcript") 
+  
+})
+
+# collapse into one dataframe
+deseq_results_8 <- do.call(rbind, deseq_results_8)
+
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
+deseq_results_8 <- deseq_results_8 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[8]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# rename columns before join
+deseq_results_8 <- deseq_results_8 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
+
+# write differential expression results to file
+deseq_results_8 %>%
+  utils::write.table(file = "./diff_expr_results/deseq_diff_expr_results_comparison_8.tsv", row.names=FALSE, sep="\t")
+```
+
+```{r, eval = contrasts[9]}
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
+deseq_results_9 <- base::lapply(deseq_results_9, function(x) {
+  
+  x %>%
+    base::as.data.frame() %>%
+    tibble::rownames_to_column("gene_transcript") 
+  
+})
+
+# collapse into one dataframe
+deseq_results_9 <- do.call(rbind, deseq_results_9)
+
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
+deseq_results_9 <- deseq_results_9 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[9]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# rename columns before join
+deseq_results_9 <- deseq_results_9 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
+
+# write differential expression results to file
+deseq_results_9 %>%
+  utils::write.table(file = "./diff_expr_results/deseq_diff_expr_results_comparison_9.tsv", row.names=FALSE, sep="\t")
+```
+
+```{r, eval = contrasts[10]}
+# define which pipeline, differential expression method, rna species and comparison/contrast that was used (info stored in rownames) (loop over all datasets)
+deseq_results_10 <- base::lapply(deseq_results_10, function(x) {
+  
+  x %>%
+    base::as.data.frame() %>%
+    tibble::rownames_to_column("gene_transcript") 
+  
+})
+
+# collapse into one dataframe
+deseq_results_10 <- do.call(rbind, deseq_results_10)
+
+# define which pipeline, differential expression method, dataset and comparison/contrast that was used (info stored in rownames)
+deseq_results_10 <- deseq_results_10 %>%
+  tibble::rownames_to_column("source") %>%
+  dplyr::mutate(source = gsub("\\..*", "", source)) %>%
+  dplyr::mutate(dataset = gsub("(raw_)|(_rnaseq_data)", "", source)) %>%
+  dplyr::mutate(pipeline = gsub("(raw_gene_)|(raw_transcript_)|(_data)", "", source)) %>%
+  dplyr::mutate(comparison = config$contrasts[10]) %>%
+  dplyr::mutate(diff_expr_method = "DESeq2") %>%
+  select(-source)
+
+# rename columns before join
+deseq_results_10 <- deseq_results_10 %>%
+  dplyr::rename(p_value = pvalue) %>%
+  dplyr::rename(adj_p_value = padj) %>%
+  dplyr::rename(log_fc = log2FoldChange)
+
+# write differential expression results to file
+deseq_results_10 %>%
+  utils::write.table(file = "./diff_expr_results/deseq_diff_expr_results_comparison_10.tsv", row.names=FALSE, sep="\t")
+```
+
 ```{r}
 # make a list of all the differential expression results objects in the global environment
 deseq_diff_expr_results <- base::do.call("list", base::mget(base::grep("deseq_results_", base::names(.GlobalEnv), value=TRUE)))
@@ -953,6 +1165,114 @@ deseq_diff_expr_results %>%
   MA_interactive()
 ```
 
+```{r, eval = contrasts_chunk_eval$contrast_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[7]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_7, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[7]]) & (pipeline == "rnaseq")) %>%
+  MA_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_7, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[7]]) & (pipeline == "rnaseq")) %>%
+  MA_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[8]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_8, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[8]]) & (pipeline == "rnaseq")) %>%
+  MA_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_8, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[8]]) & (pipeline == "rnaseq")) %>%
+  MA_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[9]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_9, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[9]]) & (pipeline == "rnaseq")) %>%
+  MA_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_9, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[9]]) & (pipeline == "rnaseq")) %>%
+  MA_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[10]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_10, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[10]]) & (pipeline == "rnaseq")) %>%
+  MA_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_10, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[10]]) & (pipeline == "rnaseq")) %>%
+  MA_interactive()
+```
+
 ## Volcano plots {.tabset .tabset-fade}
 
 ```{r, results = "asis"}
@@ -1154,6 +1474,114 @@ base::cat("#### gene's (rnaseq)")
 ```{r, eval = to_eval_chunk$gene_rnaseq_6, out.width = "100%"}
 deseq_diff_expr_results %>%
   dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[6]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[7]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_7, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[7]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_7, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[7]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[8]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_8, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[8]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_8, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[8]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[9]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_9, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[9]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_9, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[9]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[10]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_10, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[10]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_10, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[10]]) & (pipeline == "rnaseq")) %>%
   volcano_interactive()
 ```
 
