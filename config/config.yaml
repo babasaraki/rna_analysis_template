@@ -25,7 +25,7 @@ gene_rnaseq: true
 # specify the contrasts/treatment groups to compare
 # in the following format:
 # "first contrast" - "second contrast"
-# one or multiple contrasts can be included here (maximum of 6)
+# one or multiple contrasts can be included here (maximum of 10)
 contrasts: 
 - "treatment1 - treatment2"
 - "treatment1 - treatment3"
