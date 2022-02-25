@@ -150,6 +150,13 @@ if (base::file.exists(base::file.path(config$rnaseq_results_dir, "star_salmon/sa
                                                  base::file.path(config$rnaseq_results_dir, "star_salmon/salmon.merged.gene_counts_length_scaled.tsv")))
   
 }
+
+# check the number of contrasts (treatment comparisons) the user has chosen is between 1 and 10 contrasts
+if (base::length(config$contrasts) > 10) {
+  
+  issues_config <- c(issues_config, base::paste0("It appears that you have many contrasts (treatment comparisons) for the differential expression analysis based on 'contrasts' in the configuration file. Please ensure there are 10 or fewer contrasts"))
+  
+}
 ```
 
 ```{r}
