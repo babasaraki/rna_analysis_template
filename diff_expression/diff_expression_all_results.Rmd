@@ -1,0 +1,424 @@
+---
+title: "All differential expression results"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+```{r}
+# load libraries
+library(dplyr)
+library(limma)
+library(DESeq2)
+library(janitor)
+library(edgeR)
+library(DT)
+library(apeglm)
+library(plotly)
+library(heatmaply)
+library(gtools)
+library(textshape)
+library(tidyr)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(base::file.path(config$metadata))
+```
+
+## Info
+
+General info:
+
+- Two methods were employed to undertake a differential expression analysis, namely [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
+- Some values have been rounded
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - transcript rnaseq: ", config$transcript_rnaseq, "\n",
+                       " - gene rnaseq: ", config$gene_rnaseq, "\n"))
+```
+
+```{r, results = "hide"}
+# create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
+to_eval_chunk <- config[c("transcript_rnaseq",
+                          "gene_rnaseq")] %>%
+  rep(times = 10)
+
+names(to_eval_chunk)[1:2] <- paste(names(to_eval_chunk)[1:2], "1", sep = "_")
+names(to_eval_chunk)[3:4] <- paste(names(to_eval_chunk)[3:4], "2", sep = "_")
+names(to_eval_chunk)[5:6] <- paste(names(to_eval_chunk)[5:6], "3", sep = "_")
+names(to_eval_chunk)[7:8] <- paste(names(to_eval_chunk)[7:8], "4", sep = "_")
+names(to_eval_chunk)[9:10] <- paste(names(to_eval_chunk)[9:10], "5", sep = "_")
+names(to_eval_chunk)[11:12] <- paste(names(to_eval_chunk)[11:12], "6", sep = "_")
+names(to_eval_chunk)[13:14] <- paste(names(to_eval_chunk)[13:14], "7", sep = "_")
+names(to_eval_chunk)[15:16] <- paste(names(to_eval_chunk)[15:16], "8", sep = "_")
+names(to_eval_chunk)[17:18] <- paste(names(to_eval_chunk)[17:18], "9", sep = "_")
+names(to_eval_chunk)[19:20] <- paste(names(to_eval_chunk)[19:20], "10", sep = "_")
+
+n_contrasts <- base::length(config$contrasts)
+
+to_eval_chunk <- if(n_contrasts == 1) {
+  replace(to_eval_chunk, 3:20, FALSE)
+} else if(n_contrasts == 2) {
+  replace(to_eval_chunk, 5:20, FALSE)
+} else if(n_contrasts == 3) {
+  replace(to_eval_chunk, 7:20, FALSE)
+} else if(n_contrasts == 4) {
+  replace(to_eval_chunk, 9:20, FALSE)
+} else if(n_contrasts == 5) {
+  replace(to_eval_chunk, 11:20, FALSE)
+} else if(n_contrasts == 6) {
+  replace(to_eval_chunk, 13:20, FALSE)
+} else if(n_contrasts == 7) {
+  replace(to_eval_chunk, 15:20, FALSE)
+} else if(n_contrasts == 8) {
+  replace(to_eval_chunk, 17:20, FALSE)
+} else if(n_contrasts == 9) {
+  replace(to_eval_chunk, 19:20, FALSE)
+} else if(n_contrasts == 10) {
+  to_eval_chunk
+}
+
+# create a list defining which code chunks to analyse (based on the number of contrasts to analyse) based on the yaml user configuration file
+contrasts_chunk_eval <- list(contrast_1 = TRUE,
+                             contrast_2 = TRUE,
+                             contrast_3 = TRUE,
+                             contrast_4 = TRUE,
+                             contrast_5 = TRUE,
+                             contrast_6 = TRUE,
+                             contrast_7 = TRUE,
+                             contrast_8 = TRUE,
+                             contrast_9 = TRUE,
+                             contrast_10 = TRUE)
+
+contrasts_chunk_eval <- if(n_contrasts == 1) {
+  replace(contrasts_chunk_eval, 2:10, FALSE)
+} else if(n_contrasts == 2) {
+  replace(contrasts_chunk_eval, 3:10, FALSE)
+} else if(n_contrasts == 3) {
+  replace(contrasts_chunk_eval, 4:10, FALSE)
+} else if(n_contrasts == 4) {
+  replace(contrasts_chunk_eval, 5:10, FALSE)
+} else if(n_contrasts == 5) {
+  replace(contrasts_chunk_eval, 6:10, FALSE)
+} else if(n_contrasts == 6) {
+  replace(contrasts_chunk_eval, 7:10, FALSE)
+} else if(n_contrasts == 7) {
+  replace(contrasts_chunk_eval, 8:10, FALSE)
+} else if(n_contrasts == 8) {
+  replace(contrasts_chunk_eval, 9:10, FALSE)
+} else if(n_contrasts == 9) {
+  replace(contrasts_chunk_eval, 10, FALSE)
+} else if(n_contrasts == 10) {
+  contrasts_chunk_eval
+}
+
+# evalutate/setup minimum logFC threshold
+min_logfc <- base::eval(base::parse(text = config$min_lfc))
+
+# make a TRUE/FALSE list that defines how many contrasts were analysed
+# a vector of up to 6 elements since this is the max number of contrasts I've accounted for in this document
+# will be used to conditionally include code chunks depending on how many contrasts/comparisons the user has chosen to analyse
+contrasts <- base::append(config$contrasts, rep.int(FALSE, times = 10))
+contrasts <- contrasts[1:10]
+contrasts[contrasts != FALSE] <- TRUE
+contrasts <- base::as.logical(contrasts)
+
+# specify treatments by creating a string of conditions that match the order of the columns/samples in the count data
+# get the treatments and samples names from the metadata file
+treatments <- metadata %>%
+  dplyr::select(sample, treatment)
+
+# also sort by the sample column (important so it matches the order of the samples count datasets)
+# this is critical for DESeq2 - it assumes they are in the same order
+treatments <- treatments[gtools::mixedorder(base::as.character(treatments$sample)),]
+
+# extract only the conditions/groups and create a list out of it
+ordered_treatments <- treatments %>%
+  dplyr::pull(treatment)
+```
+
+Treatment comparisons: 
+
+```{r, results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("- ", config$contrasts, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", base::length(base::unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
+```{r, eval = contrasts[1]}
+# read differential expression results
+limma_voom_results_1 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_1.tsv", header = TRUE, sep="\t")
+deseq_results_1 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_1.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[2]}
+# read differential expression results
+limma_voom_results_2 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_2.tsv", header = TRUE, sep="\t")
+deseq_results_2 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_2.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[3]}
+# read differential expression results
+limma_voom_results_3 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_3.tsv", header = TRUE, sep="\t")
+deseq_results_3 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_3.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[4]}
+# read differential expression results
+limma_voom_results_4 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_4.tsv", header = TRUE, sep="\t")
+deseq_results_4 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_4.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[5]}
+# read differential expression results
+limma_voom_results_5 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_5.tsv", header = TRUE, sep="\t")
+deseq_results_5 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_5.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[6]}
+# read differential expression results
+limma_voom_results_6 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_6.tsv", header = TRUE, sep="\t")
+deseq_results_6 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_6.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[7]}
+# read differential expression results
+limma_voom_results_7 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_7.tsv", header = TRUE, sep="\t")
+deseq_results_7 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_7.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[8]}
+# read differential expression results
+limma_voom_results_8 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_8.tsv", header = TRUE, sep="\t")
+deseq_results_8 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_8.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[9]}
+# read differential expression results
+limma_voom_results_9 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_9.tsv", header = TRUE, sep="\t")
+deseq_results_9 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_9.tsv", header = TRUE, sep="\t")
+```
+
+```{r, eval = contrasts[10]}
+# read differential expression results
+limma_voom_results_10 <- utils::read.table("../diff_expression/diff_expr_results/limma_voom_diff_expr_results_comparison_10.tsv", header = TRUE, sep="\t")
+deseq_results_10 <- utils::read.table("../diff_expression/diff_expr_results/deseq_diff_expr_results_comparison_10.tsv", header = TRUE, sep="\t")
+```
+
+## All differential expression results
+
+```{r, eval = contrasts[1]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_1 <- dplyr::full_join(limma_voom_results_1, deseq_results_1, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[2]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_2 <- dplyr::full_join(limma_voom_results_2, deseq_results_2, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[3]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_3 <- dplyr::full_join(limma_voom_results_3, deseq_results_3, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[4]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_4 <- dplyr::full_join(limma_voom_results_4, deseq_results_4, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[5]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_5 <- dplyr::full_join(limma_voom_results_5, deseq_results_5, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[6]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_6 <- dplyr::full_join(limma_voom_results_6, deseq_results_6, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[7]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_7 <- dplyr::full_join(limma_voom_results_7, deseq_results_7, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[8]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_8 <- dplyr::full_join(limma_voom_results_8, deseq_results_8, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[9]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_9 <- dplyr::full_join(limma_voom_results_9, deseq_results_9, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, eval = contrasts[10]}
+# collapse results from deseq and limma/voom differential expression analysis together
+diff_expr_results_10 <- dplyr::full_join(limma_voom_results_10, deseq_results_10, by = c("gene_transcript", "p_value", "adj_p_value", "log_fc", "dataset", "pipeline", "comparison", "diff_expr_method"))
+```
+
+```{r, results = "asis"}
+base::cat(base::paste0("Genes/transcripts with a **p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc, " for both the [limma/voom](https://genomebiology.biomedcentral.com/articles/10.1186/gb-2014-15-2-r29) and the [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8) differential expression method are reported here."))
+```
+
+```{r, results = "asis"}
+base::cat(base::paste0(" - 'significant_1%' means the gene/transcript meets the logFC threshold and has an **adjusted p-value** smaller than 0.01"))
+```
+
+```{r, results = "asis"}
+base::cat(base::paste0(" - 'significant_5%' means the gene/transcript meets the logFC threshold and has an **adjusted p-value** smaller than 0.05"))
+```
+
+```{r, results = "asis"}
+base::cat(base::paste0(" - 'significant_10%' means the gene/transcript meets the logFC threshold and has an **adjusted p-value** smaller than 0.10"))
+```
+
+```{r, results = "asis"}
+base::cat(base::paste0(" - 'greater_than_10%' means the gene/transcript meets the logFC threshold and has an **adjusted p-value** smaller than 0.10"))
+```
+
+```{r, out.width = "100%"}
+# make a list of all the differential expression results objects in the global environment
+diff_expr_results <- base::do.call("list", base::mget(base::grep("diff_expr_results_", base::names(.GlobalEnv), value=TRUE)))
+
+# collapse all the differential expression resultsresults from all the contrasts analysed
+diff_expr_results  <- base::do.call(rbind, diff_expr_results)
+
+# create a column that defines if an gene/transcript is significant or not (at three significance levels and based on
+# both limma/voom and deseq results). I ordered the case_when conditions from not significant to significant
+# at the 1% level. This way, if an observation is true in several of these case_when categories, it'll be 
+# marked with the smallest p-value category is fits into, sort of "rounded up" to the smallest p-value,
+# because this case_when function seems to overwrite a value if it falls in a later case_when category
+# This data will be used as a "flag" (using highlighting) in the downstream app to indicate a possibly
+# significantly differentiated gene/transcript the user of the app might want to investigate
+diff_expr_results <- diff_expr_results %>%
+  dplyr::mutate(significance = dplyr::case_when(adj_p_value > 0.10 ~ "greater_than_10%",
+                                                (adj_p_value > 0.05) & (adj_p_value <= 0.10) ~ "significant_10%",
+                                                (adj_p_value > 0.01) & (adj_p_value <= 0.05) ~ "significant_5%",
+                                                (adj_p_value <= 0.01) ~ "significant_1%"))
+
+# create datatable to explore the data
+DT::datatable(diff_expr_results %>%
+                dplyr::filter(p_value <= 0.1) %>%
+                dplyr::select(gene_transcript,
+                              dataset,
+                              pipeline,
+                              diff_expr_method,
+                              comparison,
+                              log_fc,
+                              p_value,
+                              adj_p_value,
+                              significance) %>%
+                dplyr::mutate(across(c(dataset,
+                                       pipeline,
+                                       diff_expr_method,
+                                       comparison,
+                                       significance), base::as.factor)) %>%
+                dplyr::mutate(across(c(log_fc,
+                                       p_value,
+                                       adj_p_value), base::as.double)) %>%
+                dplyr::mutate(across(c(p_value,
+                                       adj_p_value), ~base::round(.x, digits = 10))) %>%
+                dplyr::mutate(across(c(log_fc), ~base::round(.x, digits = 4))),
+              filter = "top",
+              rownames = FALSE,
+              colnames = c("Gene/transcript",
+                           "Dataset",
+                           "Pipeline",
+                           "Differential expression method",
+                           "Comparison",
+                           "Log fold change",
+                           "p-value",
+                           "Adjusted p-value",
+                           "Significance"),
+              extensions = base::list("ColReorder" = NULL,
+                                      "Buttons" = NULL,
+                                      "FixedColumns" = base::list(leftColumns=1)),
+              options = list(
+                dom = "BRrltpi",
+                autoWidth = TRUE,
+                buttons =
+                  list("copy",
+                       list(extend = "collection",
+                            buttons = c("csv", "excel", "pdf"),
+                            text = "Download"),
+                       I("colvis"))))
+```
+
+```{r}
+# write differential expression results to file
+diff_expr_results %>%
+  utils::write.table(file = "./diff_expr_results/all_diff_expr_results.tsv", row.names=FALSE, sep="\t")
+
+# extract a list of the significant genes/transcripts (at three significance levels)
+sig_diff_expr_data_1 <- diff_expr_results %>%
+  dplyr::filter(significance == "significant_1%") %>%
+  dplyr::select(gene_transcript) %>%
+  dplyr::distinct(gene_transcript)
+
+sig_diff_expr_data_5 <- diff_expr_results %>%
+  dplyr::filter(significance == "significant_5%") %>%
+  dplyr::select(gene_transcript) %>%
+  dplyr::distinct(gene_transcript)
+
+sig_diff_expr_data_10 <- diff_expr_results %>%
+  dplyr::filter(significance == "significant_10%") %>%
+  dplyr::select(gene_transcript) %>%
+  dplyr::distinct(gene_transcript)
+
+# also write these to file
+utils::write.csv(sig_diff_expr_data_1, file = "./diff_expr_results/sig_diff_expr_results_1.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_5, file = "./diff_expr_results/sig_diff_expr_results_5.csv", row.names = FALSE)
+utils::write.csv(sig_diff_expr_data_10, file = "./diff_expr_results/sig_diff_expr_results_10.csv", row.names = FALSE)
+```
+
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
+```
