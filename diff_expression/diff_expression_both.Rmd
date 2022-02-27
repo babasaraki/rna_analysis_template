@@ -149,8 +149,8 @@ min_logfc <- base::eval(base::parse(text = config$min_lfc))
 # make a TRUE/FALSE list that defines how many contrasts were analysed
 # a vector of up to 6 elements since this is the max number of contrasts I've accounted for in this document
 # will be used to conditionally include code chunks depending on how many contrasts/comparisons the user has chosen to analyse
-contrasts <- base::append(config$contrasts, rep.int(FALSE, times = 6))
-contrasts <- contrasts[1:6]
+contrasts <- base::append(config$contrasts, rep.int(FALSE, times = 10))
+contrasts <- contrasts[1:10]
 contrasts[contrasts != FALSE] <- TRUE
 contrasts <- base::as.logical(contrasts)
 
