@@ -216,7 +216,7 @@ server <- function(input, output, session) {
                         colors = c("#0097db", "#85C659", "#ec1515", "#febf2a", "#784f96"),
                         type = "box",
                         hoverinfo = "y") %>%
-          plotly::layout(yaxis = base::list(title = "Raw counts"),
+          plotly::layout(yaxis = base::list(title = "Counts per million"),
                          xaxis = base::list(title = "", tickangle = 270, type = "category")) }) %>%
       plotly::subplot(shareY = TRUE, widths = c(subplot_width()))
   })
