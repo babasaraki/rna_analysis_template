@@ -28,7 +28,6 @@ gene_rnaseq: true
 # one or multiple contrasts can be included here (maximum of 10)
 contrasts: 
 - "treatment1 - treatment2"
-- "treatment1 - treatment3"
 
 # filtering settings for limma/voom analysis
 
