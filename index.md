@@ -28,11 +28,14 @@ The full analysis has been documented so others can take a "deep dive" into the 
 ### limma/voom
 
 - [Differential expression (limma/voom)](./example_webpage/diff_expression_limma_voom.html)
+- [Differential expression volcano plots (limma/voom)](./example_webpage/diff_expression_limma_voom_volcano.html)
 - [Differential expression results (limma/voom)](./example_webpage/diff_expression_limma_voom_results.html)
 
 ### deseq2
 
 - [Differential expression (deseq2)](./example_webpage/diff_expression_deseq.html)
+- [Differential expression MA plots (deseq2)](./example_webpage/diff_expression_deseq_ma.html)
+- [Differential expression volcano plots (deseq2)](./example_webpage/diff_expression_deseq_volcano.html)
 - [Differential expression results (deseq2)](./example_webpage/diff_expression_deseq_results.html)
 
 ### Both differential expression methods

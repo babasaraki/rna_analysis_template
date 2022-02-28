@@ -1,0 +1,544 @@
+---
+title: "Differential expression volcano plots - deseq2"
+author:
+  # - Jane Doe^[Institution Two, jane@example.org]      # add report authors (uncomment if using)
+  # - John Doe^[Institution One, john@example.org]      # add a second report author (uncomment if using)
+date: "Date: `r base::format(Sys.time(), '%d/%m/%Y')`"
+always_allow_html: true
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    number_sections: false
+    self_contained: yes
+    css: ../esr-styles.css
+    highlight: pygments
+    includes:
+      after_body: ../esr_footer.html
+  editor_options: 
+    chunk_output_type: console
+---
+
+<img src="../images/ESR_logo.svg" style="position:absolute;top:19px;right:40px;width:23%;" />
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, error = FALSE, message = FALSE, fig.align = "center")
+```
+
+```{r}
+# load libraries
+library(dplyr)
+library(limma)
+library(DESeq2)
+library(janitor)
+library(edgeR)
+library(DT)
+library(apeglm)
+library(plotly)
+library(heatmaply)
+library(gtools)
+library(textshape)
+library(tidyr)
+
+# for icons at bottom of doc
+htmltools::tagList(rmarkdown::html_dependency_font_awesome())
+
+# read in yaml config file
+config <- yaml::yaml.load_file("../config/config.yaml")
+
+# read in metadata
+metadata <- utils::read.csv(base::file.path(config$metadata))
+
+# read in deseq differential expression results
+deseq_diff_expr_results <- utils::read.table("./diff_expr_results/all_deseq_diff_expr_results.tsv", header = TRUE)
+```
+
+## Info
+
+General info:
+
+- Differential expression analysis using [deseq2](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-014-0550-8).
+- Some values have been rounded
+
+Datasets analysed:
+
+```{r, results = "asis"}
+# print the datasets the user has chosen to analyse for this document
+base::cat(base::paste0(" - transcript rnaseq: ", config$transcript_rnaseq, "\n",
+                       " - gene rnaseq: ", config$gene_rnaseq, "\n"))
+```
+
+Treatment comparisons: 
+
+```{r, results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("- ", config$contrasts, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", base::length(base::unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
+```{r, results = "hide"}
+# create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
+to_eval_chunk <- config[c("transcript_rnaseq",
+                          "gene_rnaseq")] %>%
+  rep(times = 10)
+
+names(to_eval_chunk)[1:2] <- paste(names(to_eval_chunk)[1:2], "1", sep = "_")
+names(to_eval_chunk)[3:4] <- paste(names(to_eval_chunk)[3:4], "2", sep = "_")
+names(to_eval_chunk)[5:6] <- paste(names(to_eval_chunk)[5:6], "3", sep = "_")
+names(to_eval_chunk)[7:8] <- paste(names(to_eval_chunk)[7:8], "4", sep = "_")
+names(to_eval_chunk)[9:10] <- paste(names(to_eval_chunk)[9:10], "5", sep = "_")
+names(to_eval_chunk)[11:12] <- paste(names(to_eval_chunk)[11:12], "6", sep = "_")
+names(to_eval_chunk)[13:14] <- paste(names(to_eval_chunk)[13:14], "7", sep = "_")
+names(to_eval_chunk)[15:16] <- paste(names(to_eval_chunk)[15:16], "8", sep = "_")
+names(to_eval_chunk)[17:18] <- paste(names(to_eval_chunk)[17:18], "9", sep = "_")
+names(to_eval_chunk)[19:20] <- paste(names(to_eval_chunk)[19:20], "10", sep = "_")
+
+n_contrasts <- base::length(config$contrasts)
+
+to_eval_chunk <- if(n_contrasts == 1) {
+  replace(to_eval_chunk, 3:20, FALSE)
+} else if(n_contrasts == 2) {
+  replace(to_eval_chunk, 5:20, FALSE)
+} else if(n_contrasts == 3) {
+  replace(to_eval_chunk, 7:20, FALSE)
+} else if(n_contrasts == 4) {
+  replace(to_eval_chunk, 9:20, FALSE)
+} else if(n_contrasts == 5) {
+  replace(to_eval_chunk, 11:20, FALSE)
+} else if(n_contrasts == 6) {
+  replace(to_eval_chunk, 13:20, FALSE)
+} else if(n_contrasts == 7) {
+  replace(to_eval_chunk, 15:20, FALSE)
+} else if(n_contrasts == 8) {
+  replace(to_eval_chunk, 17:20, FALSE)
+} else if(n_contrasts == 9) {
+  replace(to_eval_chunk, 19:20, FALSE)
+} else if(n_contrasts == 10) {
+  to_eval_chunk
+}
+
+# create a list defining which code chunks to analyse (based on the number of contrasts to analyse) based on the yaml user configuration file
+contrasts_chunk_eval <- list(contrast_1 = TRUE,
+                             contrast_2 = TRUE,
+                             contrast_3 = TRUE,
+                             contrast_4 = TRUE,
+                             contrast_5 = TRUE,
+                             contrast_6 = TRUE,
+                             contrast_7 = TRUE,
+                             contrast_8 = TRUE,
+                             contrast_9 = TRUE,
+                             contrast_10 = TRUE)
+
+contrasts_chunk_eval <- if(n_contrasts == 1) {
+  replace(contrasts_chunk_eval, 2:10, FALSE)
+} else if(n_contrasts == 2) {
+  replace(contrasts_chunk_eval, 3:10, FALSE)
+} else if(n_contrasts == 3) {
+  replace(contrasts_chunk_eval, 4:10, FALSE)
+} else if(n_contrasts == 4) {
+  replace(contrasts_chunk_eval, 5:10, FALSE)
+} else if(n_contrasts == 5) {
+  replace(contrasts_chunk_eval, 6:10, FALSE)
+} else if(n_contrasts == 6) {
+  replace(contrasts_chunk_eval, 7:10, FALSE)
+} else if(n_contrasts == 7) {
+  replace(contrasts_chunk_eval, 8:10, FALSE)
+} else if(n_contrasts == 8) {
+  replace(contrasts_chunk_eval, 9:10, FALSE)
+} else if(n_contrasts == 9) {
+  replace(contrasts_chunk_eval, 10, FALSE)
+} else if(n_contrasts == 10) {
+  contrasts_chunk_eval
+}
+
+# evalutate/setup minimum logFC threshold
+min_logfc <- base::eval(base::parse(text = config$min_lfc))
+```
+
+```{r}
+# setup a function to plot volcano plots
+volcano_interactive <- function(data_frame) {
+  
+  # add all points in blue
+  p <- plotly::plot_ly(data = data_frame,
+                       x = ~log_fc,
+                       y = ~adj_p_value,
+                       type = "scatter",
+                       marker = list(color = "#0097db", opacity = 0.7),
+                       hoverinfo = "text",
+                       text = ~paste(" Gene/transcript:", gene_transcript,
+                                     "</br></br>",
+                                     "p-value: ", base::round(p_value, digits = 10),
+                                     "</br>",
+                                     "adjusted p-value: ", base::round(adj_p_value, digits = 10),
+                                     "</br>",
+                                     "-log10 adjusted p-value: ", base::round(adj_p_value, digits = 10),
+                                     "</br>",
+                                     "Log fold change:", base::round(log_fc, digits = 4)),
+                       showlegend = FALSE) %>%
+    
+    # add significant points in red
+    add_trace(data = dplyr::filter(data_frame, (adj_p_value <= 0.1) & ((log_fc >= min_logfc) | (log_fc <= -min_logfc))),
+              x = ~log_fc,
+              y = ~adj_p_value,
+              type = "scatter",
+              marker = list(color = "#ec1515", opacity = 0.7)) %>%
+    
+    # add significant points in yellow
+    add_trace(data = dplyr::filter(data_frame, (adj_p_value <= 0.05) & ((log_fc >= min_logfc) | (log_fc <= -min_logfc))),
+              x = ~log_fc,
+              y = ~adj_p_value,
+              type = "scatter",
+              marker = list(color = "#febf2a", opacity = 0.7)) %>%
+    
+    # add significant points in green
+    add_trace(data = dplyr::filter(data_frame, (adj_p_value <= 0.01) & ((log_fc >= min_logfc) | (log_fc <= -min_logfc))),
+              x = ~log_fc,
+              y = ~adj_p_value,
+              type = "scatter",
+              marker = list(color = "#85C659", opacity = 0.7)) %>%
+    
+    # formatting
+    plotly::layout(xaxis = base::list(title = "Log fold change"),
+                   yaxis = base::list(title = "-log10 adjusted p-value",
+                                      type = "log",
+                                      autorange = "reversed"))
+  toWebGL(p)
+  
+}
+```
+
+## Volcano plots {.tabset .tabset-fade}
+
+```{r, results = "asis"}
+base::cat("These plots plot the negative log of the p-value against the log fold change")
+```
+
+```{r, results = "asis"}
+base::cat(base::paste0("Genes/transcripts with a **p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc, " are plotted here."))
+```
+
+<div class="alert alert-custom-blue">
+
+```{r, results = "asis"}
+base::cat(base::paste0("Blue: Genes/transcripts with an **adjusted p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc))
+```
+
+</div>
+
+<div class="alert alert-custom-red">
+
+```{r, results = "asis"}
+base::cat(base::paste0("Red: Genes/transcripts with an **adjusted p-value** smaller than 0.1 and a log fold change greater/smaller than +-", config$min_lfc))
+```
+
+</div>
+
+<div class="alert alert-custom-yellow">
+
+```{r, results = "asis"}
+base::cat(base::paste0("Yellow: Genes/transcripts with an **adjusted p-value** smaller than 0.05 and a log fold change greater/smaller than +-", config$min_lfc))
+```
+
+</div>
+
+<div class="alert alert-custom-green">
+
+```{r, results = "asis"}
+base::cat(base::paste0("Green: Genes/transcripts with an **adjusted p-value** smaller than 0.01 and a log fold change greater/smaller than +-", config$min_lfc))
+```
+
+</div>
+
+```{r, eval = contrasts_chunk_eval$contrast_1, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[1]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_1, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_1, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[1]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_1, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_1, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[1]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[2]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_2, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[2]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_2, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_2, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[2]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[3]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_3, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[3]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_3, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_3, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[3]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[4]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_4, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[4]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_4, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_4, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[4]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[5]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_5, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[5]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_5, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_5, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[5]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[6]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_6, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[6]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_6, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_6, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[6]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[7]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_7, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[7]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_7, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_7, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[7]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[8]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_8, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[8]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_8, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_8, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[8]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[9]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_9, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[9]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_9, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_9, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[9]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = contrasts_chunk_eval$contrast_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("###", config$contrasts[[10]], "{.tabset .tabset-fade}")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### transcript's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$transcript_rnaseq_10, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "transcript") & (comparison == config$contrasts[[10]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_10, results = "asis"}
+# optionally include/print markdown header for this section if being analysed
+base::cat("#### gene's (rnaseq)")
+```
+
+```{r, eval = to_eval_chunk$gene_rnaseq_10, out.width = "100%"}
+deseq_diff_expr_results %>%
+  dplyr::filter((dataset == "gene") & (comparison == config$contrasts[[10]]) & (pipeline == "rnaseq")) %>%
+  volcano_interactive()
+```
+
+```{r, cleanup, results = "hide"}
+# clean up
+rm(list = ls())
+```
