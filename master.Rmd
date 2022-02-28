@@ -72,6 +72,7 @@ Run the RShiny app locally or deploy to a shinyapps IO account (which will allow
 
 ```{r}
 rmarkdown::render("./diff_expression/diff_expression_limma_voom.Rmd")
+rmarkdown::render("./diff_expression/diff_expression_limma_voom_volcano.Rmd")
 rmarkdown::render("./diff_expression/diff_expression_limma_voom_results.Rmd")
 ```
 
@@ -79,6 +80,8 @@ rmarkdown::render("./diff_expression/diff_expression_limma_voom_results.Rmd")
 
 ```{r}
 rmarkdown::render("./diff_expression/diff_expression_deseq.Rmd")
+rmarkdown::render("./diff_expression/diff_expression_deseq_ma.Rmd")
+rmarkdown::render("./diff_expression/diff_expression_deseq_volcano.Rmd")
 rmarkdown::render("./diff_expression/diff_expression_deseq_results.Rmd")
 ```
 

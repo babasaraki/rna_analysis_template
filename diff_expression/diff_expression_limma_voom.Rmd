@@ -73,6 +73,29 @@ base::cat(base::paste0(" - transcript rnaseq: ", config$transcript_rnaseq, "\n",
                        " - gene rnaseq: ", config$gene_rnaseq, "\n"))
 ```
 
+Treatment comparisons: 
+
+```{r, results = "asis"}
+# print the treatment group comparisons the user has chosen to analyse
+base::cat(base::paste0("- ", config$contrasts, "\n"))
+```
+
+```{r, results = "asis"}
+# print the number of samples analysed
+base::cat(base::paste0("Total number of samples: ", base::length(base::unique(metadata$sample))))
+```
+
+Number of samples in each treatment group:
+
+```{r, results = "asis"}
+# print the number of samples in each treatment group
+n_samples_by_treatment <- metadata %>%
+  group_by(treatment) %>%
+  dplyr::summarise(n_samples = n())
+
+base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
+```
+
 ```{r, results = "hide"}
 # create a list defining which code chunks to analyse (that are set to TRUE for both the datasets and contrasts to analyse) based on the yaml user configuration file
 to_eval_chunk <- config[c("transcript_rnaseq",
@@ -269,29 +292,6 @@ plotSA_interactive <- function(data) {
   toWebGL(p)
   
 }
-```
-
-Treatment comparisons: 
-
-```{r, results = "asis"}
-# print the treatment group comparisons the user has chosen to analyse
-base::cat(base::paste0("- ", config$contrasts, "\n"))
-```
-
-```{r, results = "asis"}
-# print the number of samples analysed
-base::cat(base::paste0("Total number of samples: ", base::length(base::unique(metadata$sample))))
-```
-
-Number of samples in each treatment group:
-
-```{r, results = "asis"}
-# print the number of samples in each treatment group
-n_samples_by_treatment <- metadata %>%
-  group_by(treatment) %>%
-  dplyr::summarise(n_samples = n())
-
-base::cat(base::paste0("- ", n_samples_by_treatment$treatment, ": ", n_samples_by_treatment$n_samples, "\n"))
 ```
 
 ```{r, results = "asis"}
