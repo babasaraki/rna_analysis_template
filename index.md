@@ -2,7 +2,7 @@
 
 ## Overview of the analysis
 
-The RNA-seq data was analysed with [rnaseq version 3.5](https://github.com/nf-core/rnaseq/tree/3.5). The outputs of these pipelines were then analysed with the [rna_analysis_template 1.2.3](https://github.com/leahkemp/rna_analysis_template/tree/1.2.3). The following treatment groups were compared for analysis:
+The RNA-seq data was analysed with [rnaseq version 3.5](https://github.com/nf-core/rnaseq/tree/3.5). The outputs of these pipelines were then analysed with the [rna_analysis_template 1.2.4](https://github.com/leahkemp/rna_analysis_template/tree/1.2.4). The following treatment groups were compared for analysis:
 
 - treatment1 - treatment2
 

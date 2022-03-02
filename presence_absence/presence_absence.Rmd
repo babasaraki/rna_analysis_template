@@ -47,7 +47,7 @@ counts <- utils::read.csv("../prepare_counts/counts.csv")
 config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
-metadata <- utils::read.csv(file.path(config$metadata))
+metadata <- utils::read.csv(file.path(config$metadata_path))
 
 # subset all count data to the count data specified to be analysed by the user in the config file
 # this will remove rows of data matching the said conditions
