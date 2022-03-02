@@ -50,7 +50,7 @@ htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
-metadata <- utils::read.csv(base::file.path(config$metadata))
+metadata <- utils::read.csv(base::file.path(config$metadata_path))
 
 # read in limma/voom differential expression results
 limma_voom_diff_expr_results <- utils::read.table("./diff_expr_results/all_limma_voom_diff_expr_results.tsv", header = TRUE)

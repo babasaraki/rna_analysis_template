@@ -54,7 +54,7 @@ htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
-metadata <- utils::read.csv(file.path(config$metadata))
+metadata <- utils::read.csv(file.path(config$metadata_path))
 
 # read in differential expression results
 diff_expr_results <- utils::read.table("../diff_expression/diff_expr_results/all_diff_expr_results.tsv",

@@ -40,7 +40,7 @@ htmltools::tagList(rmarkdown::html_dependency_font_awesome())
 config <- yaml::yaml.load_file("../config/config.yaml")
 
 # read in metadata
-metadata <- utils::read.csv(file.path(config$metadata))
+metadata <- utils::read.csv(file.path(config$metadata_path))
 
 # create empty lists to put all the results of the issues to later return to user
 issues_config <- base::list()
